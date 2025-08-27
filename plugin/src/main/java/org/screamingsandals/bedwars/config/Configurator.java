@@ -202,7 +202,15 @@ public class Configurator {
         checkOrSetConfig(modify, "scoreboard.bedLost", "&c\u2718");
         checkOrSetConfig(modify, "scoreboard.anchorEmpty", "&e\u2718");
         checkOrSetConfig(modify, "scoreboard.bedExists", "&a\u2714");
-        checkOrSetConfig(modify, "scoreboard.teamTitle", "%bed%%color%%team%");
+        checkOrSetConfig(modify, "scoreboard.teamTitle", "%bed% %color%%team% (%players%)");
+        checkOrSetConfig(modify, "scoreboard.topWrapper", Arrays.asList(
+                "&7&m----------------", "&r"
+        ));
+        checkOrSetConfig(modify, "scoreboard.bottomWrapper", Arrays.asList(
+                "&r",
+                "&7&m----------------"
+        ));
+
 
         checkOrSetConfig(modify, "title.enabled", true);
         checkOrSetConfig(modify, "title.fadeIn", 0);

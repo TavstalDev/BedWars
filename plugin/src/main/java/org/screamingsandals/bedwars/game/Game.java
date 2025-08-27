@@ -2621,6 +2621,26 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
         obj.setDisplaySlot(DisplaySlot.SIDEBAR);
         obj.setDisplayName(this.formatScoreboardTitle());
 
+        // Clear old scoreboard to avoid duplicate lines
+        for (String entry : this.gameScoreboard.getEntries()) {
+            this.gameScoreboard.resetScores(entry);
+        }
+
+        List<String> topWrapper = Main.getConfigurator().config.getStringList("scoreboard.topWrapper").stream()
+                .map(content -> ChatColor.translateAlternateColorCodes('&', content))
+                .collect(Collectors.toList());;
+        List<String> bottomWrapper = Main.getConfigurator().config.getStringList("scoreboard.bottomWrapper").stream()
+                .map(content -> ChatColor.translateAlternateColorCodes('&', content))
+                .collect(Collectors.toList());;
+
+        int score = teamsInGame.size() + topWrapper.size() + bottomWrapper.size();
+
+        // Add top wrapper content
+        for (String line : topWrapper) {
+            obj.getScore(line).setScore(score--);
+        }
+
+        // Add dynamic team content
         for (CurrentTeam team : teamsInGame) {
             String teamLine = this.formatScoreboardTeam(team, !team.isBed, team.isBed && "RESPAWN_ANCHOR".equals(team.teamInfo.bed.getBlock().getType().name()) && Player116ListenerUtils.isAnchorEmpty(team.teamInfo.bed.getBlock()));
 
@@ -2631,10 +2651,12 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                 this.gameScoreboard.resetScores(this.formatScoreboardTeam(team, true, false));
             }
 
-            Score score = obj.getScore(teamLine);
-            if (score.getScore() != team.players.size()) {
-                score.setScore(team.players.size());
-            }
+            obj.getScore(teamLine).setScore(score--);
+        }
+
+        // Add bottom wrapper content
+        for (String line : bottomWrapper) {
+            obj.getScore(line).setScore(score--);
         }
 
         for (GamePlayer player : players) {
@@ -2649,7 +2671,8 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
 
         return Main.getConfigurator().config.getString("scoreboard.teamTitle")
                 .replace("%color%", team.teamInfo.color.chatColor.toString()).replace("%team%", team.teamInfo.name)
-                .replace("%bed%", destroy ? bedLostString() : (empty ? anchorEmptyString() : bedExistString()));
+                .replace("%bed%", destroy ? bedLostString() : (empty ? anchorEmptyString() : bedExistString()))
+                .replace("%players%", String.valueOf(team.players.size()));
     }
 
     public static String bedExistString() {
