@@ -2637,7 +2637,9 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
 
         // Add top wrapper content
         for (String line : topWrapper) {
-            obj.getScore(line).setScore(score--);
+            String uniqueLine = line + ChatColor.values()[score % ChatColor.values().length];
+            obj.getScore(uniqueLine).setScore(score--);
+
         }
 
         // Add dynamic team content
@@ -2656,7 +2658,9 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
 
         // Add bottom wrapper content
         for (String line : bottomWrapper) {
-            obj.getScore(line).setScore(score--);
+            String uniqueLine = line + ChatColor.values()[score % ChatColor.values().length];
+            obj.getScore(uniqueLine).setScore(score--);
+
         }
 
         for (GamePlayer player : players) {
