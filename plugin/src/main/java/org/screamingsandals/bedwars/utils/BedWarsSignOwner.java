@@ -22,7 +22,11 @@ package org.screamingsandals.bedwars.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
@@ -39,7 +43,7 @@ public class BedWarsSignOwner implements SignOwner {
 
 	@Override
 	public boolean isNameExists(String name) {
-		return Main.isGameExists(name) || name.equalsIgnoreCase("leave");
+		return Main.isGameExists(name) || name.equalsIgnoreCase("autojoin") || name.equalsIgnoreCase("leave");
 	}
 
 	@Override
@@ -60,11 +64,20 @@ public class BedWarsSignOwner implements SignOwner {
 					updateLeaveSign(sign);
 				}
 			}.runTask(Main.getInstance());
-		}
+		} else if ("autojoin".equalsIgnoreCase(name)) {
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    updateAutoJoinSign(sign);
+                }
+            }.runTask(Main.getInstance());
+        }
 	}
 
 	private void updateLeaveSign(SignBlock sign) {
-		List<String> texts = new ArrayList<>(Main.getConfigurator().config.getStringList("sign"));
+		List<String> texts = Main.getConfigurator().config.getStringList("sign.leave-lines").stream()
+                .map(line -> ChatColor.translateAlternateColorCodes('&', line))
+                .collect(Collectors.toList());
 
 		Block block = sign.getLocation().getBlock();
 		if (block.getState() instanceof Sign) {
@@ -72,13 +85,30 @@ public class BedWarsSignOwner implements SignOwner {
 
 			for (int i = 0; i < texts.size(); i++) {
 				String text = texts.get(i);
-				state.setLine(i, text.replace("%arena%", i18nonly("leave_from_game_item")).replace("%status%", "")
-						.replace("%players%", ""));
+				state.setLine(i, text);
 			}
 
 			state.update();
 		}
 	}
+
+    private void updateAutoJoinSign(SignBlock sign) {
+        List<String> texts = Main.getConfigurator().config.getStringList("sign.auto-join-lines").stream()
+                .map(line -> ChatColor.translateAlternateColorCodes('&', line))
+                .collect(Collectors.toList());
+
+        Block block = sign.getLocation().getBlock();
+        if (block.getState() instanceof Sign) {
+            Sign state = (Sign) block.getState();
+
+            for (int i = 0; i < texts.size(); i++) {
+                String text = texts.get(i);
+                state.setLine(i, text);
+            }
+
+            state.update();
+        }
+    }
 
 	@Override
 	public List<String> getSignPrefixes() {
@@ -91,6 +121,11 @@ public class BedWarsSignOwner implements SignOwner {
             if (Main.isPlayerInGame(player)) {
                 Main.getPlayerGameProfile(player).changeGame(null);
             }
+        } else if (sign.getName().equalsIgnoreCase("autojoin")) {
+            if (Main.isPlayerInGame(player)) {
+                return;
+            }
+            Bukkit.dispatchCommand(player, "bw autojoin");
         } else {
             Game game = Main.getGame(sign.getName());
             if (game != null) {

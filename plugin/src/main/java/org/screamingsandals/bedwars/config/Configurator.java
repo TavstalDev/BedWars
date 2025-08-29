@@ -575,6 +575,8 @@ public class Configurator {
                 Arrays.asList("&7Price:", "&7%price% %resource%", "&7Amount:", "&7%amount%"));
 
         checkOrSetConfig(modify, "sign.lines", config.getList("sign", Arrays.asList("&c&l[BedWars]", "%arena%", "%status%", "%players%")));
+        checkOrSetConfig(modify, "sign.leave-lines", config.getList("sign-leave.lines", Arrays.asList("&c&l[BedWars]", "&aClick here", "&ato leave", "&athe game.")));
+        checkOrSetConfig(modify, "sign.auto-join-lines", config.getList("sign-auto-join.lines", Arrays.asList("&c&l[BedWars]", "&aClick here", "&ato auto-join", "&ato a game.")));
 
         checkOrSetConfig(modify, "sign.block-behind.enabled", false);
         checkOrSetConfig(modify, "sign.block-behind.waiting", "ORANGE_STAINED_GLASS");
