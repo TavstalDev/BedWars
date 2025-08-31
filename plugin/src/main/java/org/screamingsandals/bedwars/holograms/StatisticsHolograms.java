@@ -255,7 +255,7 @@ public class StatisticsHolograms implements TouchHandler {
         lines.add(i18n("statistics_score", false).replace("%score%",
                 Integer.toString(statistic.getScore())));
 
-        int increment = holo.length();
+        int increment = Math.min(holo.length(), 3);
 
         for (int i = 0; i < lines.size(); i++) {
         	holo.setLine(i + increment, lines.get(i));
