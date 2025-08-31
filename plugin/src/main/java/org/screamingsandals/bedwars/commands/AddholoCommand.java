@@ -22,6 +22,7 @@ package org.screamingsandals.bedwars.commands;
 import org.screamingsandals.bedwars.Main;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.screamingsandals.bedwars.holograms.ELeaderboardType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +42,53 @@ public class AddholoCommand extends BaseCommand {
             player.sendMessage(i18n("holo_not_enabled"));
         } else {
             if (args.size() >= 1 && args.get(0).equalsIgnoreCase("leaderboard")) {
-                Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation());
+
+                if (args.size() < 2) {
+                    player.sendMessage(i18n("leaderboard_type_missing"));
+                    return true;
+                }
+
+                switch (args.get(1).toLowerCase()) {
+                    case "w":
+                    case "win":
+                    case "wins": {
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Wins);
+                        break;
+                    }
+                    case "l":
+                    case "loss":
+                    case "lose":
+                    case "loses": {
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Loses);
+                        break;
+                    }
+                    case "k":
+                    case "kill":
+                    case "kills": {
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Kills);
+                        break;
+                    }
+                    case "d":
+                    case "death":
+                    case "deaths": {
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Deaths);
+                        break;
+                    }
+                    case "beds":
+                    case "beds_destroyed": {
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.DestroyedBeds);
+                        break;
+                    }
+                    case "score": {
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Score);
+                        break;
+                    }
+                    default: {
+                        player.sendMessage(i18n("leaderboard_type_invalid"));
+                        return true;
+                    }
+                }
+
                 player.sendMessage(i18n("leaderboard_holo_added"));
             } else {
                 Main.getHologramInteraction().addHologramLocation(player.getEyeLocation());
@@ -56,6 +103,9 @@ public class AddholoCommand extends BaseCommand {
     public void completeTab(List<String> completion, CommandSender sender, List<String> args) {
         if (args.size() == 1) {
             completion.addAll(Arrays.asList("leaderboard", "stats"));
+        }
+        else if (args.size() == 2 && args.get(0).equalsIgnoreCase("leaderboard")) {
+            completion.addAll(Arrays.asList("wins", "loses", "kills", "deaths", "beds_destroyed", "score"));
         }
     }
 

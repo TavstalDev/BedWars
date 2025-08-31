@@ -22,6 +22,8 @@ package org.screamingsandals.bedwars.holograms;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.screamingsandals.bedwars.Main;
@@ -38,12 +40,12 @@ import static org.screamingsandals.bedwars.lib.lang.I.i18n;
 import static org.screamingsandals.bedwars.lib.lang.I.i18nonly;
 
 public class LeaderboardHolograms implements TouchHandler {
-    private ArrayList<Location> hologramLocations;
-    private Map<Location, Hologram> holograms;
-    private List<LeaderboardEntry> entries;
+    private ArrayList<HologramLocation> hologramLocations;
+    private Map<HologramLocation, Hologram> holograms;
+    private Map<ELeaderboardType, List<LeaderboardEntry>> entries;
 
-    public void addHologramLocation(Location eyeLocation) {
-        this.hologramLocations.add(eyeLocation.subtract(0, 3, 0));
+    public void addHologramLocation(Location eyeLocation, ELeaderboardType type) {
+        this.hologramLocations.add(new HologramLocation(eyeLocation.subtract(0, 3, 0), type));
         this.updateHologramDatabase();
 
         if (entries == null) {
@@ -58,7 +60,17 @@ public class LeaderboardHolograms implements TouchHandler {
             return;
         }
 
-        this.entries = Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.size"));
+        if (this.entries == null) {
+            this.entries = new HashMap<>();
+        }
+
+        this.entries.clear(); // Make sure to clear previous entries
+        this.entries.put(ELeaderboardType.Score, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.size")));
+        this.entries.put(ELeaderboardType.Kills, Main.getPlayerStatisticsManager().getKillLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.killSize")));
+        this.entries.put(ELeaderboardType.Deaths, Main.getPlayerStatisticsManager().getDeathLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.deathSize")));
+        this.entries.put(ELeaderboardType.Wins, Main.getPlayerStatisticsManager().getWinLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.winSize")));
+        this.entries.put(ELeaderboardType.Loses, Main.getPlayerStatisticsManager().getLoseLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.loseSize")));
+        this.entries.put(ELeaderboardType.DestroyedBeds, Main.getPlayerStatisticsManager().getBedLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.destroyedBedSize")));
         updateHolograms();
     }
 
@@ -79,12 +91,32 @@ public class LeaderboardHolograms implements TouchHandler {
         if (file.exists()) {
             try {
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-                List<Location> locations = (List<Location>) config.get("locations");
-                if (locations != null) {
-                    if (locations.removeIf(location -> location.getWorld() == null)) { // Skip invalid locations
-                        Main.getInstance().getLogger().warning("There are holograms in " + file.getAbsolutePath() + " with location in unknown world! They were removed from the configuration");
+                List<Map<?, ?>> serializedLocations = (List<Map<?, ?>>) config.getList("locations");
+
+                if (serializedLocations == null) {
+                    return;
+                }
+
+                hologramLocations.clear(); // Clear existing locations before loading new ones
+
+                for (Map<?, ?> locationData : serializedLocations) {
+                    String worldName = (String) locationData.get("world");
+                    World world = Bukkit.getWorld(worldName);
+                    if (world == null) {
+                        // World doesn't exist, skip this location
+                        continue;
                     }
-                    this.hologramLocations.addAll(locations);
+
+                    double x = (double) locationData.get("x");
+                    double y = (double) locationData.get("y");
+                    double z = (double) locationData.get("z");
+                    float pitch = ((Double) locationData.get("pitch")).floatValue();
+                    float yaw = ((Double) locationData.get("yaw")).floatValue();
+                    ELeaderboardType leaderboardType = ELeaderboardType.valueOf((String) locationData.get("leaderboardType"));
+
+                    Location loc = new Location(world, x, y, z, yaw, pitch);
+                    HologramLocation hologramLoc = new HologramLocation(loc, leaderboardType);
+                    hologramLocations.add(hologramLoc);
                 }
             } catch (Throwable t) {
                 Main.getInstance().getLogger().severe("Failed to load holograms from " + file.getAbsolutePath());
@@ -108,7 +140,20 @@ public class LeaderboardHolograms implements TouchHandler {
                 file.createNewFile();
             }
 
-            config.set("locations", hologramLocations);
+            List<Map<String, Object>> serializedLocations = new ArrayList<>();
+            for (HologramLocation loc : hologramLocations) {
+                Map<String, Object> locationData = new HashMap<>();
+                locationData.put("world", loc.getWorld().getName());
+                locationData.put("x", loc.getX());
+                locationData.put("y", loc.getY());
+                locationData.put("z", loc.getZ());
+                locationData.put("pitch", loc.getPitch());
+                locationData.put("yaw", loc.getYaw());
+                locationData.put("leaderboardType", loc.leaderboardType.name()); // Save the enum as a string
+                serializedLocations.add(locationData);
+            }
+
+            config.set("locations", serializedLocations);
             config.save(file);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -138,15 +183,47 @@ public class LeaderboardHolograms implements TouchHandler {
                 holograms.put(location, Main.getHologramManager().spawnHologramTouchable(location));
                 holograms.get(location).addHandler(this);
             }
-            updateHologram(holograms.get(location));
+            updateHologram(location.leaderboardType, holograms.get(location));
         });
         Bukkit.getOnlinePlayers().forEach(this::addViewer);
     }
 
-    private void updateHologram(final Hologram holo) {
+    private void updateHologram(final  ELeaderboardType type, final Hologram holo) {
         List<String> lines = new ArrayList<>();
 
-        lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headline")));
+        lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headTopWrapper")));
+        String title = Main.getConfigurator().config.getString("holograms.leaderboard.headTitle");
+        if (title != null && !title.isEmpty())
+            lines.add(ChatColor.translateAlternateColorCodes('&', title));
+
+        switch (type)
+        {
+            case Wins: {
+                lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.winHeadline")));
+                break;
+            }
+            case Loses: {
+                lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.loseHeadline")));
+                break;
+            }
+            case Kills: {
+                lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.killHeadline")));
+                break;
+            }
+            case Deaths: {
+                lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.deathHeadline")));
+                break;
+            }
+            case DestroyedBeds: {
+                lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.destroyedBedHeadline")));
+                break;
+            }
+            case Score: {
+                lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headline")));
+                break;
+            }
+        }
+        lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headBottomWrapper")));
 
         String line = ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.format"));
 
@@ -154,7 +231,7 @@ public class LeaderboardHolograms implements TouchHandler {
             lines.add(i18nonly("leaderboard_no_scores"));
         } else {
             AtomicInteger l = new AtomicInteger(1);
-            entries.forEach(leaderboardEntry -> {
+            entries.get(type).forEach(leaderboardEntry -> {
                 lines.add(line.replace("%name%", leaderboardEntry.getPlayer().getName() != null ? leaderboardEntry.getPlayer().getName() : (leaderboardEntry.getLatestKnownName() != null ? leaderboardEntry.getLatestKnownName() : leaderboardEntry.getPlayer().getUniqueId().toString())).replace("%score%", Integer.toString(leaderboardEntry.getTotalScore())).replace("%order%", Integer.toString(l.getAndIncrement())));
             });
         }

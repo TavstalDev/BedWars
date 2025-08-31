@@ -491,9 +491,23 @@ public class Configurator {
 
         checkOrSetConfig(modify, "holograms.enabled", true);
         checkOrSetConfig(modify, "holograms.headline", "Your &eBEDWARS&f stats");
+
+        checkOrSetConfig(modify, "holograms.leaderboard.headTopWrapper", "&7╔=================╗");
+        checkOrSetConfig(modify, "holograms.leaderboard.headBottomWrapper", "&7╚=================╝");
+        checkOrSetConfig(modify, "holograms.leaderboard.headTitle", "&7 &aOverall &7");
         checkOrSetConfig(modify, "holograms.leaderboard.headline", "&6Bedwars Leaderboard");
+        checkOrSetConfig(modify, "holograms.leaderboard.killHeadline", "&6Kill Leaderboard");
+        checkOrSetConfig(modify, "holograms.leaderboard.deathHeadline", "&6Death Leaderboard");
+        checkOrSetConfig(modify, "holograms.leaderboard.winHeadline", "&6Win Leaderboard");
+        checkOrSetConfig(modify, "holograms.leaderboard.loseHeadline", "&6Lose Leaderboard");
+        checkOrSetConfig(modify, "holograms.leaderboard.destroyedBedHeadline", "&6Destroyed Bed Leaderboard");
         checkOrSetConfig(modify, "holograms.leaderboard.format", "&l%order%. &7%name% - &a%score%");
         checkOrSetConfig(modify, "holograms.leaderboard.size", 10);
+        checkOrSetConfig(modify, "holograms.leaderboard.killSize", 30);
+        checkOrSetConfig(modify, "holograms.leaderboard.deathSize", 10);
+        checkOrSetConfig(modify, "holograms.leaderboard.winSize", 10);
+        checkOrSetConfig(modify, "holograms.leaderboard.loseSize", 10);
+        checkOrSetConfig(modify, "holograms.leaderboard.destroyedBedSize", 30);
 
         checkOrSetConfig(modify, "chat.override", true);
         checkOrSetConfig(modify, "chat.format", "<%teamcolor%%name%&r> ");

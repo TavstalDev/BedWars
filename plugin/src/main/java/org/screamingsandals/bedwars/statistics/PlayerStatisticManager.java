@@ -37,11 +37,11 @@ import java.util.*;
 public class PlayerStatisticManager implements PlayerStatisticsManager {
     private File databaseFile = null;
     private FileConfiguration fileDatabase;
-    private Map<UUID, PlayerStatistic> playerStatistic;
-    private Map<UUID, Map.Entry<String, Integer>> allScores = new HashMap<>();
+    //private Map<UUID, PlayerStatistic> playerStatistic;
+    private final Map<UUID, PlayerStatistic> allScores = new HashMap<>();
 
     public PlayerStatisticManager() {
-        this.playerStatistic = new HashMap<>();
+        //this.playerStatistic = new HashMap<>();
         this.fileDatabase = null;
     }
 
@@ -58,11 +58,12 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             return null;
         }
 
-        if (!this.playerStatistic.containsKey(uuid)) {
+        return allScores.get(uuid);
+        /*if (!this.playerStatistic.containsKey(uuid)) {
             return this.loadStatistic(uuid);
         }
 
-        return this.playerStatistic.get(uuid);
+        return this.playerStatistic.get(uuid);*/
     }
 
     public void initialize() {
@@ -113,7 +114,16 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 ResultSet resultSet = preparedStatement.executeQuery();
                 if (resultSet.first()) {
                     do {
-                        allScores.put(UUID.fromString(resultSet.getString("uuid")), new AbstractMap.SimpleEntry<>(resultSet.getString("name"), resultSet.getInt("score")));
+                        UUID uuid = UUID.fromString(resultSet.getString("uuid"));
+                        PlayerStatistic statistic = new PlayerStatistic(uuid);
+                        statistic.addKills(resultSet.getInt("kills"));
+                        statistic.addDeaths(resultSet.getInt("deaths"));
+                        statistic.addWins(resultSet.getInt("wins"));
+                        statistic.addLoses(resultSet.getInt("loses"));
+                        statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
+                        statistic.addScore(resultSet.getInt("score"));
+                        statistic.setName(resultSet.getString("name"));
+                        allScores.put(uuid, statistic);
                     } while (resultSet.next());
                 }
                 connection.commit();
@@ -127,7 +137,15 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             }
 
             for (String key : fileDatabase.getConfigurationSection("data").getKeys(false)) {
-                allScores.put(UUID.fromString(key), new AbstractMap.SimpleEntry<>(fileDatabase.getString("data." + key + ".name"), fileDatabase.getInt("data." + key + ".score")));
+                PlayerStatistic statistic = new PlayerStatistic(UUID.fromString(key));
+                statistic.addKills(fileDatabase.getInt("data." + key + ".kills"));
+                statistic.addDeaths(fileDatabase.getInt("data." + key + ".deaths"));
+                statistic.addWins(fileDatabase.getInt("data." + key + ".wins"));
+                statistic.addLoses(fileDatabase.getInt("data." + key + ".loses"));
+                statistic.addDestroyedBeds(fileDatabase.getInt("data." + key + ".destroyedBeds"));
+                statistic.addScore(fileDatabase.getInt("data." + key + ".score"));
+                statistic.setName(fileDatabase.getString("data." + key + ".name"));
+                allScores.put(UUID.fromString(key), statistic);
             }
         }
     }
@@ -136,23 +154,78 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         List<LeaderboardEntry> entries = new ArrayList<>();
 
         allScores.entrySet().stream()
-                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getValue(), c2.getValue().getValue()))
+                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getScore(), c2.getValue().getScore()))
                 .limit(count)
-                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getValue(), entry.getValue().getKey())));
+                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getScore(), entry.getValue().getName())));
+
+        return entries;
+    }
+
+    public List<LeaderboardEntry> getKillLeaderboard(int count) {
+        List<LeaderboardEntry> entries = new ArrayList<>();
+
+        allScores.entrySet().stream()
+                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getKills(), c2.getValue().getKills()))
+                .limit(count)
+                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getKills(), entry.getValue().getName())));
+
+        return entries;
+    }
+
+    public List<LeaderboardEntry> getDeathLeaderboard(int count) {
+        List<LeaderboardEntry> entries = new ArrayList<>();
+
+        allScores.entrySet().stream()
+                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getDeaths(), c2.getValue().getDeaths()))
+                .limit(count)
+                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getDeaths(), entry.getValue().getName())));
+
+        return entries;
+    }
+
+    public List<LeaderboardEntry> getWinLeaderboard(int count) {
+        List<LeaderboardEntry> entries = new ArrayList<>();
+
+        allScores.entrySet().stream()
+                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getWins(), c2.getValue().getWins()))
+                .limit(count)
+                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getWins(), entry.getValue().getName())));
+
+        return entries;
+    }
+
+    public List<LeaderboardEntry> getLoseLeaderboard(int count) {
+        List<LeaderboardEntry> entries = new ArrayList<>();
+
+        allScores.entrySet().stream()
+                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getLoses(), c2.getValue().getLoses()))
+                .limit(count)
+                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getLoses(), entry.getValue().getName())));
+
+        return entries;
+    }
+
+    public List<LeaderboardEntry> getBedLeaderboard(int count) {
+        List<LeaderboardEntry> entries = new ArrayList<>();
+
+        allScores.entrySet().stream()
+                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getDestroyedBeds(), c2.getValue().getDestroyedBeds()))
+                .limit(count)
+                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getDestroyedBeds(), entry.getValue().getName())));
 
         return entries;
     }
 
     public LeaderboardEntry getLeaderboardEntry(int index) {
         return allScores.entrySet().stream()
-                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getValue(), c2.getValue().getValue()))
+                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getScore(), c2.getValue().getScore()))
                 .skip(index)
                 .findFirst()
-                .map(entry -> new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getValue(), entry.getValue().getKey()))
+                .map(entry -> new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getScore(), entry.getValue().getName()))
                 .orElse(null);
     }
 
-    private PlayerStatistic loadDatabaseStatistic(UUID uuid) {
+    /*private PlayerStatistic loadDatabaseStatistic(UUID uuid) {
         if (this.playerStatistic.containsKey(uuid)) {
             return this.playerStatistic.get(uuid);
         }
@@ -190,21 +263,22 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         if (player != null && !playerStatistic.getName().equals(player.getName())) {
             playerStatistic.setName(player.getName());
         }
-        allScores.put(uuid, new AbstractMap.SimpleEntry<>(playerStatistic.getName(), playerStatistic.getScore()));
+        allScores.put(uuid, playerStatistic);
 
         this.playerStatistic.put(playerStatistic.getId(), playerStatistic);
         return playerStatistic;
-    }
+    }*/
 
     public PlayerStatistic loadStatistic(UUID uuid) {
-        if (Main.getConfigurator().config.getString("statistics.type").equalsIgnoreCase("database")) {
+        return allScores.get(uuid);
+        /*if (Main.getConfigurator().config.getString("statistics.type").equalsIgnoreCase("database")) {
             return this.loadDatabaseStatistic(uuid);
         } else {
             return this.loadYamlStatistic(uuid);
-        }
+        }*/
     }
 
-    private PlayerStatistic loadYamlStatistic(UUID uuid) {
+    /*private PlayerStatistic loadYamlStatistic(UUID uuid) {
 
         if (this.fileDatabase == null || !this.fileDatabase.contains("data." + uuid.toString())) {
             PlayerStatistic playerStatistic = new PlayerStatistic(uuid);
@@ -237,7 +311,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         this.playerStatistic.put(uuid, playerStatistic);
         updateScore(playerStatistic);
         return playerStatistic;
-    }
+    }*/
 
     private void loadYml(File ymlFile) {
         try {
@@ -317,12 +391,12 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
 
     public void unloadStatistic(OfflinePlayer player) {
         if (Main.getConfigurator().config.getString("statistics.type").equalsIgnoreCase("database")) {
-            this.playerStatistic.remove(player.getUniqueId());
+            //this.playerStatistic.remove(player.getUniqueId());
         }
     }
 
     public void updateScore(PlayerStatistic playerStatistic) {
-        allScores.put(playerStatistic.getId(), new AbstractMap.SimpleEntry<>(playerStatistic.getName(), playerStatistic.getScore()));
+        allScores.put(playerStatistic.getId(), playerStatistic);
         if (Main.getLeaderboardHolograms() != null) {
             Main.getLeaderboardHolograms().updateEntries();
         }

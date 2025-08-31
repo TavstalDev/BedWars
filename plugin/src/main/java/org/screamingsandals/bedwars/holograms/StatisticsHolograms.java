@@ -166,7 +166,9 @@ public class StatisticsHolograms implements TouchHandler {
                         Main.getConfigurator().config.getString("holograms.headline", "Your &eBEDWARS&f stats")
                 );
         if (!headline.trim().isEmpty()) {
+            holo.addLine(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headTopWrapper", "")));
             holo.addLine(headline);
+            holo.addLine(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headBottomWrapper", "")));
         }
 
         this.updatePlayerStatisticHologram(player, holo);
@@ -252,12 +254,8 @@ public class StatisticsHolograms implements TouchHandler {
                 Integer.toString(statistic.getDestroyedBeds())));
         lines.add(i18n("statistics_score", false).replace("%score%",
                 Integer.toString(statistic.getScore())));
-        
-        int size = holo.length();
-        int increment = 0;
-        if (size == 1 || size > lines.size()) {
-        	increment = 1;
-        }
+
+        int increment = holo.length();
 
         for (int i = 0; i < lines.size(); i++) {
         	holo.setLine(i + increment, lines.get(i));
