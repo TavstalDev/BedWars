@@ -31,6 +31,8 @@ import org.screamingsandals.simpleinventories.utils.StackParser;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -112,6 +114,12 @@ public class Configurator {
         AtomicBoolean modify = new AtomicBoolean(false);
         checkOrSetConfig(modify, "locale", "en");
         checkOrSetConfig(modify, "debug", false);
+
+        // Responsible for first start setup
+        LocalDateTime nextSeasonReset = LocalDate.now().withDayOfMonth(1).plusMonths(1).atStartOfDay();
+        LocalDateTime nextDailyReset = LocalDate.now().plusDays(1).atStartOfDay();
+        checkOrSetConfig(modify, "dates.season-reset", nextSeasonReset.toString());
+        checkOrSetConfig(modify, "dates.daily-reset", nextDailyReset.toString());
 
         checkOrSetConfig(modify, "allow-crafting", false);
         checkOrSetConfig(modify, "keep-inventory-on-death", false);
@@ -494,7 +502,8 @@ public class Configurator {
 
         checkOrSetConfig(modify, "holograms.leaderboard.headTopWrapper", "&7╔=================╗");
         checkOrSetConfig(modify, "holograms.leaderboard.headBottomWrapper", "&7╚=================╝");
-        checkOrSetConfig(modify, "holograms.leaderboard.headTitle", "&7 &aOverall &7");
+        checkOrSetConfig(modify, "holograms.leaderboard.allTimeTitle", "&7 &aOverall &7");
+        checkOrSetConfig(modify, "holograms.leaderboard.seasonTitle", "&7 &aSeasonal &7");
         checkOrSetConfig(modify, "holograms.leaderboard.headline", "&6Bedwars Leaderboard");
         checkOrSetConfig(modify, "holograms.leaderboard.killHeadline", "&6Kill Leaderboard");
         checkOrSetConfig(modify, "holograms.leaderboard.deathHeadline", "&6Death Leaderboard");
