@@ -152,6 +152,50 @@ public class DatabaseManager {
         return "SELECT uuid, score, name FROM " + tablePrefix + "stats_players";
     }
 
+    public String getSeasonalCreateTableSql() {
+        return "CREATE TABLE IF NOT EXISTS `" + tablePrefix
+                + "seasonal_stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(255) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
+    }
+
+    public String getSeasonalReadObjectSql() {
+        return "SELECT * FROM " + tablePrefix + "seasonal_stats_players WHERE uuid = ? LIMIT 1";
+    }
+
+    public String getSeasonalWriteObjectSql() {
+        return "INSERT INTO " + tablePrefix
+                + "seasonal_stats_players(uuid, name, deaths, destroyedBeds, kills, loses, score, wins) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE uuid=VALUES(uuid),name=VALUES(name),deaths=VALUES(deaths),destroyedBeds=VALUES(destroyedBeds),kills=VALUES(kills),loses=VALUES(loses),score=VALUES(score),wins=VALUES(wins)";
+    }
+
+    public String getSeasonalResetSql() {
+        return "TRUNCATE TABLE " + tablePrefix + "seasonal_stats_players";
+    }
+
+    public String getSeasonalScoresSql() {
+        return "SELECT uuid, score, name FROM " + tablePrefix + "seasonal_stats_players";
+    }
+
+    public String getDailyCreateTableSql() {
+        return "CREATE TABLE IF NOT EXISTS `" + tablePrefix
+                + "daily_stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(255) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
+    }
+
+    public String getDailyReadObjectSql() {
+        return "SELECT * FROM " + tablePrefix + "daily_stats_players WHERE uuid = ? LIMIT 1";
+    }
+
+    public String getDailyWriteObjectSql() {
+        return "INSERT INTO " + tablePrefix
+                + "daily_stats_players(uuid, name, deaths, destroyedBeds, kills, loses, score, wins) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE uuid=VALUES(uuid),name=VALUES(name),deaths=VALUES(deaths),destroyedBeds=VALUES(destroyedBeds),kills=VALUES(kills),loses=VALUES(loses),score=VALUES(score),wins=VALUES(wins)";
+    }
+
+    public String getDailyScoresSql() {
+        return "SELECT uuid, score, name FROM " + tablePrefix + "daily_stats_players";
+    }
+
+    public String getDailyResetSql() {
+        return "TRUNCATE TABLE " + tablePrefix + "daily_stats_players";
+    }
+
     public String getTablePrefix() {
         return tablePrefix;
     }
