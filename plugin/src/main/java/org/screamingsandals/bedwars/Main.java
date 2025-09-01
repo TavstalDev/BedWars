@@ -59,6 +59,7 @@ import org.screamingsandals.bedwars.placeholderapi.BedwarsExpansion;
 import org.screamingsandals.bedwars.special.SpecialRegister;
 import org.screamingsandals.bedwars.statistics.PlayerStatisticManager;
 import org.screamingsandals.bedwars.tab.TabManager;
+import org.screamingsandals.bedwars.tasks.CheckStatisticsTask;
 import org.screamingsandals.bedwars.utils.BedWarsSignOwner;
 import org.screamingsandals.bedwars.utils.MiscUtils;
 import org.screamingsandals.bedwars.utils.UpdateChecker;
@@ -425,9 +426,13 @@ public class Main extends JavaPlugin implements BedwarsAPI {
 
         try {
             if (configurator.config.getBoolean("holograms.enabled")) {
+                if (hologramInteraction != null) // Fixes scoreboards not being removed on reload
+                    hologramInteraction.unloadHolograms();
                 hologramInteraction = new StatisticsHolograms();
                 hologramInteraction.loadHolograms();
 
+                if (leaderboardHolograms != null) // Fixes scoreboards not being removed on reload
+                    leaderboardHolograms.unloadHolograms();
                 leaderboardHolograms = new LeaderboardHolograms();
                 leaderboardHolograms.loadHolograms();
             }
@@ -628,6 +633,9 @@ public class Main extends JavaPlugin implements BedwarsAPI {
                 preSelectGames = true;
             }, 2L);
         }
+
+        CheckStatisticsTask task = new CheckStatisticsTask();
+        this.getServer().getScheduler().scheduleSyncRepeatingTask(this, task, 20L * 30, 20L * 900);
 
         Bukkit.getConsoleSender().sendMessage("§fEverything is loaded! If you like our work, consider visiting our Patreon! <3");
         Bukkit.getConsoleSender().sendMessage("§fhttps://www.patreon.com/screamingsandals");
