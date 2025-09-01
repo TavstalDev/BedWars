@@ -20,15 +20,16 @@
 package org.screamingsandals.bedwars.statistics;
 
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
 import org.screamingsandals.bedwars.Main;
 import org.screamingsandals.bedwars.api.events.BedwarsSavePlayerStatisticEvent;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.screamingsandals.bedwars.api.statistics.LeaderboardEntry;
 import org.screamingsandals.bedwars.api.statistics.PlayerStatisticsManager;
+import org.screamingsandals.bedwars.api.statistics.ELeaderboardKind;
+import org.screamingsandals.bedwars.api.statistics.ELeaderboardStatType;
 
 import java.io.File;
 import java.sql.*;
@@ -36,20 +37,21 @@ import java.util.*;
 
 public class PlayerStatisticManager implements PlayerStatisticsManager {
     private File databaseFile = null;
-    private FileConfiguration fileDatabase;
-    //private Map<UUID, PlayerStatistic> playerStatistic;
+    private FileConfiguration fileDatabase = null;
     private final Map<UUID, PlayerStatistic> allScores = new HashMap<>();
 
-    public PlayerStatisticManager() {
-        //this.playerStatistic = new HashMap<>();
-        this.fileDatabase = null;
-    }
+    private File seasonalDatabaseFile = null;
+    private FileConfiguration seasonalFileDatabase = null;;
+    private final Map<UUID, PlayerStatistic> seasonalScores = new HashMap<>();
+
+    private File dailyDatabaseFile = null;
+    private FileConfiguration dailyFileDatabase = null;;
+    private final Map<UUID, PlayerStatistic> dailyScores = new HashMap<>();
 
     public PlayerStatistic getStatistic(OfflinePlayer player) {
         if (player == null) {
             return null;
         }
-
         return getStatistic(player.getUniqueId());
     }
 
@@ -59,11 +61,36 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         }
 
         return allScores.get(uuid);
-        /*if (!this.playerStatistic.containsKey(uuid)) {
-            return this.loadStatistic(uuid);
+    }
+
+    public PlayerStatistic getSeasonalStatistic(OfflinePlayer player) {
+        if (player == null) {
+            return null;
+        }
+        return getSeasonalStatistic(player.getUniqueId());
+    }
+
+    public PlayerStatistic getSeasonalStatistic(UUID uuid) {
+        if (uuid == null) {
+            return null;
         }
 
-        return this.playerStatistic.get(uuid);*/
+        return seasonalScores.get(uuid);
+    }
+
+    public PlayerStatistic getDailyStatistic(OfflinePlayer player) {
+        if (player == null) {
+            return null;
+        }
+        return getDailyStatistic(player.getUniqueId());
+    }
+
+    public PlayerStatistic getDailyStatistic(UUID uuid) {
+        if (uuid == null) {
+            return null;
+        }
+
+        return dailyScores.get(uuid);
     }
 
     public void initialize() {
@@ -74,8 +101,10 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         if (Main.getConfigurator().config.getString("statistics.type").equalsIgnoreCase("database")) {
             this.initializeDatabase();
         } else {
-            File file = new File(Main.getInstance().getDataFolder() + "/database/bw_stats_players.yml");
-            this.loadYml(file);
+            File allStatFile = new File(Main.getInstance().getDataFolder() + "/database/bw_stats_players.yml");
+            File seasonalStatFile = new File(Main.getInstance().getDataFolder() + "/database/bw_seasonal_stats_players.yml");
+            File dailyStatFile = new File(Main.getInstance().getDataFolder() + "/database/bw_daily_stats_players.yml");
+            this.loadYml(allStatFile, seasonalStatFile, dailyStatFile);
         }
 
         this.initializeLeaderboard();
@@ -89,9 +118,21 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
 
             try (Connection connection = Main.getDatabaseManager().getConnection()) {
                 connection.setAutoCommit(false);
+                // Create all-time stats
                 PreparedStatement preparedStatement = connection
                         .prepareStatement(Main.getDatabaseManager().getCreateTableSql());
                 preparedStatement.executeUpdate();
+
+                // create seasonal stats
+                preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getSeasonalCreateTableSql());
+                preparedStatement.executeUpdate();
+
+                // create daily stats
+                preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getDailyCreateTableSql());
+                preparedStatement.executeUpdate();
+
                 connection.commit();
                 preparedStatement.close();
             } catch (Exception ex) {
@@ -105,10 +146,14 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
 
     private void initializeLeaderboard() {
         allScores.clear();
+        seasonalScores.clear();
+        dailyScores.clear();
 
         if (Main.getConfigurator().config.getString("statistics.type").equalsIgnoreCase("database")) {
             try (Connection connection = Main.getDatabaseManager().getConnection()) {
                 connection.setAutoCommit(false);
+
+                // Load all-time stats
                 PreparedStatement preparedStatement = connection
                         .prepareStatement(Main.getDatabaseManager().getScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
                 ResultSet resultSet = preparedStatement.executeQuery();
@@ -126,6 +171,45 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                         allScores.put(uuid, statistic);
                     } while (resultSet.next());
                 }
+
+                // Load seasonal stats
+                preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getSeasonalScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                resultSet = preparedStatement.executeQuery();
+                if (resultSet.first()) {
+                    do {
+                        UUID uuid = UUID.fromString(resultSet.getString("uuid"));
+                        PlayerStatistic statistic = new PlayerStatistic(uuid);
+                        statistic.addKills(resultSet.getInt("kills"));
+                        statistic.addDeaths(resultSet.getInt("deaths"));
+                        statistic.addWins(resultSet.getInt("wins"));
+                        statistic.addLoses(resultSet.getInt("loses"));
+                        statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
+                        statistic.addScore(resultSet.getInt("score"));
+                        statistic.setName(resultSet.getString("name"));
+                        seasonalScores.put(uuid, statistic);
+                    } while (resultSet.next());
+                }
+
+                // Load daily stats
+                preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getDailyScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+                resultSet = preparedStatement.executeQuery();
+                if (resultSet.first()) {
+                    do {
+                        UUID uuid = UUID.fromString(resultSet.getString("uuid"));
+                        PlayerStatistic statistic = new PlayerStatistic(uuid);
+                        statistic.addKills(resultSet.getInt("kills"));
+                        statistic.addDeaths(resultSet.getInt("deaths"));
+                        statistic.addWins(resultSet.getInt("wins"));
+                        statistic.addLoses(resultSet.getInt("loses"));
+                        statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
+                        statistic.addScore(resultSet.getInt("score"));
+                        statistic.setName(resultSet.getString("name"));
+                        dailyScores.put(uuid, statistic);
+                    } while (resultSet.next());
+                }
+
                 connection.commit();
                 preparedStatement.close();
             } catch (Exception ex) {
@@ -136,6 +220,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 return;
             }
 
+            // Load all-time stats
             for (String key : fileDatabase.getConfigurationSection("data").getKeys(false)) {
                 PlayerStatistic statistic = new PlayerStatistic(UUID.fromString(key));
                 statistic.addKills(fileDatabase.getInt("data." + key + ".kills"));
@@ -147,7 +232,34 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 statistic.setName(fileDatabase.getString("data." + key + ".name"));
                 allScores.put(UUID.fromString(key), statistic);
             }
+
+            // Load seasonal stats
+            for (String key : seasonalFileDatabase.getConfigurationSection("data").getKeys(false)) {
+                PlayerStatistic statistic = new PlayerStatistic(UUID.fromString(key));
+                statistic.addKills(seasonalFileDatabase.getInt("data." + key + ".kills"));
+                statistic.addDeaths(seasonalFileDatabase.getInt("data." + key + ".deaths"));
+                statistic.addWins(seasonalFileDatabase.getInt("data." + key + ".wins"));
+                statistic.addLoses(seasonalFileDatabase.getInt("data." + key + ".loses"));
+                statistic.addDestroyedBeds(seasonalFileDatabase.getInt("data." + key + ".destroyedBeds"));
+                statistic.addScore(seasonalFileDatabase.getInt("data." + key + ".score"));
+                statistic.setName(seasonalFileDatabase.getString("data." + key + ".name"));
+                seasonalScores.put(UUID.fromString(key), statistic);
+            }
+
+            // Load daily stats
+            for (String key : dailyFileDatabase.getConfigurationSection("data").getKeys(false)) {
+                PlayerStatistic statistic = new PlayerStatistic(UUID.fromString(key));
+                statistic.addKills(dailyFileDatabase.getInt("data." + key + ".kills"));
+                statistic.addDeaths(dailyFileDatabase.getInt("data." + key + ".deaths"));
+                statistic.addWins(dailyFileDatabase.getInt("data." + key + ".wins"));
+                statistic.addLoses(dailyFileDatabase.getInt("data." + key + ".loses"));
+                statistic.addDestroyedBeds(dailyFileDatabase.getInt("data." + key + ".destroyedBeds"));
+                statistic.addScore(dailyFileDatabase.getInt("data." + key + ".score"));
+                statistic.setName(dailyFileDatabase.getString("data." + key + ".name"));
+                dailyScores.put(UUID.fromString(key), statistic);
+            }
         }
+
     }
 
     public List<LeaderboardEntry> getLeaderboard(int count) {
@@ -161,57 +273,78 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         return entries;
     }
 
-    public List<LeaderboardEntry> getKillLeaderboard(int count) {
+    public List<LeaderboardEntry> getLeaderboard(int count, ELeaderboardStatType stat, ELeaderboardKind kind) {
         List<LeaderboardEntry> entries = new ArrayList<>();
 
-        allScores.entrySet().stream()
-                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getKills(), c2.getValue().getKills()))
-                .limit(count)
-                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getKills(), entry.getValue().getName())));
+        Map<UUID, PlayerStatistic> scores;
+        switch (kind) {
+            case Daily: {
+                scores = this.dailyScores;
+                break;
+            }
+            case Season: {
+                scores = this.seasonalScores;
+                break;
+            }
+            case AllTime: {
+                scores = this.allScores;
+                break;
+            }
+            default: {
+                return entries;
+            }
+        }
 
-        return entries;
-    }
+        switch (stat) {
+            case Kills: {
+                scores.entrySet().stream()
+                        .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getKills(), c2.getValue().getKills()))
+                        .limit(count)
+                        .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getKills(), entry.getValue().getName())));
+                break;
+            }
+            case Deaths: {
+                scores.entrySet().stream()
+                        .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getDeaths(), c2.getValue().getDeaths()))
+                        .limit(count)
+                        .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getDeaths(), entry.getValue().getName())));
 
-    public List<LeaderboardEntry> getDeathLeaderboard(int count) {
-        List<LeaderboardEntry> entries = new ArrayList<>();
+                break;
+            }
+            case Wins: {
+                scores.entrySet().stream()
+                        .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getWins(), c2.getValue().getWins()))
+                        .limit(count)
+                        .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getWins(), entry.getValue().getName())));
 
-        allScores.entrySet().stream()
-                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getDeaths(), c2.getValue().getDeaths()))
-                .limit(count)
-                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getDeaths(), entry.getValue().getName())));
+                break;
+            }
+            case Loses: {
+                scores.entrySet().stream()
+                        .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getLoses(), c2.getValue().getLoses()))
+                        .limit(count)
+                        .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getLoses(), entry.getValue().getName())));
 
-        return entries;
-    }
+                break;
+            }
+            case DestroyedBeds: {
+                scores.entrySet().stream()
+                        .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getDestroyedBeds(), c2.getValue().getDestroyedBeds()))
+                        .limit(count)
+                        .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getDestroyedBeds(), entry.getValue().getName())));
 
-    public List<LeaderboardEntry> getWinLeaderboard(int count) {
-        List<LeaderboardEntry> entries = new ArrayList<>();
+                break;
+            }
+            case Score:
+            default: {
+                scores.entrySet().stream()
+                        .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getScore(), c2.getValue().getScore()))
+                        .limit(count)
+                        .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getScore(), entry.getValue().getName())));
 
-        allScores.entrySet().stream()
-                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getWins(), c2.getValue().getWins()))
-                .limit(count)
-                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getWins(), entry.getValue().getName())));
-
-        return entries;
-    }
-
-    public List<LeaderboardEntry> getLoseLeaderboard(int count) {
-        List<LeaderboardEntry> entries = new ArrayList<>();
-
-        allScores.entrySet().stream()
-                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getLoses(), c2.getValue().getLoses()))
-                .limit(count)
-                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getLoses(), entry.getValue().getName())));
-
-        return entries;
-    }
-
-    public List<LeaderboardEntry> getBedLeaderboard(int count) {
-        List<LeaderboardEntry> entries = new ArrayList<>();
-
-        allScores.entrySet().stream()
-                .sorted((c1, c2) -> Comparator.<Integer>reverseOrder().compare(c1.getValue().getDestroyedBeds(), c2.getValue().getDestroyedBeds()))
-                .limit(count)
-                .forEach(entry -> entries.add(new org.screamingsandals.bedwars.statistics.LeaderboardEntry(Bukkit.getOfflinePlayer(entry.getKey()), entry.getValue().getDestroyedBeds(), entry.getValue().getName())));
+                break;
+            }
+        }
 
         return entries;
     }
@@ -225,102 +358,17 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 .orElse(null);
     }
 
-    /*private PlayerStatistic loadDatabaseStatistic(UUID uuid) {
-        if (this.playerStatistic.containsKey(uuid)) {
-            return this.playerStatistic.get(uuid);
-        }
-        HashMap<String, Object> deserialize = new HashMap<>();
-
-        try (Connection connection = Main.getDatabaseManager().getConnection()) {
-            PreparedStatement preparedStatement = connection
-                    .prepareStatement(Main.getDatabaseManager().getReadObjectSql());
-            preparedStatement.setString(1, uuid.toString());
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            ResultSetMetaData meta = resultSet.getMetaData();
-            while (resultSet.next()) {
-                for (int i = 1; i <= meta.getColumnCount(); i++) {
-                    String key = meta.getColumnName(i);
-                    Object value = resultSet.getObject(key);
-                    deserialize.put(key, value);
-                }
-            }
-
-            resultSet.close();
-            preparedStatement.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        PlayerStatistic playerStatistic;
-
-        if (deserialize.isEmpty()) {
-            playerStatistic = new PlayerStatistic(uuid);
-        } else {
-            playerStatistic = new PlayerStatistic(deserialize);
-        }
-        Player player = Main.getInstance().getServer().getPlayer(uuid);
-        if (player != null && !playerStatistic.getName().equals(player.getName())) {
-            playerStatistic.setName(player.getName());
-        }
-        allScores.put(uuid, playerStatistic);
-
-        this.playerStatistic.put(playerStatistic.getId(), playerStatistic);
-        return playerStatistic;
-    }*/
-
-    public PlayerStatistic loadStatistic(UUID uuid) {
-        return allScores.get(uuid);
-        /*if (Main.getConfigurator().config.getString("statistics.type").equalsIgnoreCase("database")) {
-            return this.loadDatabaseStatistic(uuid);
-        } else {
-            return this.loadYamlStatistic(uuid);
-        }*/
-    }
-
-    /*private PlayerStatistic loadYamlStatistic(UUID uuid) {
-
-        if (this.fileDatabase == null || !this.fileDatabase.contains("data." + uuid.toString())) {
-            PlayerStatistic playerStatistic = new PlayerStatistic(uuid);
-            this.playerStatistic.put(uuid, playerStatistic);
-            return playerStatistic;
-        }
-
-        Object confSection = this.fileDatabase.get("data." + uuid.toString());
-
-        if (!(confSection instanceof ConfigurationSection) && !(confSection instanceof Map)) {
-            Main.getInstance().getLogger().warning("Statistics of player with UUID " + uuid + " are not properly saved and the plugin cannot load them! Expected " + ConfigurationSection.class.getName() + ", got " + (confSection != null ? confSection.getClass().getName() : "null"));
-            PlayerStatistic playerStatistic = new PlayerStatistic(uuid);
-            this.playerStatistic.put(uuid, playerStatistic);
-            return playerStatistic;
-        }
-
-        Map<String, Object> deserialize;
-        if (confSection instanceof ConfigurationSection) {
-            deserialize = new HashMap<>(((ConfigurationSection) confSection).getValues(false));
-        } else {
-            //noinspection unchecked
-            deserialize = (Map<String, Object>) confSection;
-        }
-        PlayerStatistic playerStatistic = new PlayerStatistic(deserialize);
-        playerStatistic.setId(uuid);
-        Player player = Main.getInstance().getServer().getPlayer(uuid);
-        if (player != null && !playerStatistic.getName().equals(player.getName())) {
-            playerStatistic.setName(player.getName());
-        }
-        this.playerStatistic.put(uuid, playerStatistic);
-        updateScore(playerStatistic);
-        return playerStatistic;
-    }*/
-
-    private void loadYml(File ymlFile) {
+    private void loadYml(File ymlFile, File seasonalYmlFile, File dailyYmlFile) {
         try {
             Main.getInstance().getLogger().info("Loading statistics from YAML-File ...");
 
             YamlConfiguration config;
 
             this.databaseFile = ymlFile;
+            this.seasonalDatabaseFile = seasonalYmlFile;
+            this.dailyDatabaseFile = dailyYmlFile;
 
+            // All-time stats
             if (!ymlFile.exists()) {
                 ymlFile.getParentFile().mkdirs();
                 ymlFile.createNewFile();
@@ -331,30 +379,86 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             } else {
                 config = YamlConfiguration.loadConfiguration(ymlFile);
             }
-
             this.fileDatabase = config;
+
+            // Seasonal stats
+            if (!seasonalYmlFile.exists()) {
+                seasonalYmlFile.getParentFile().mkdirs();
+                seasonalYmlFile.createNewFile();
+
+                config = new YamlConfiguration();
+                config.createSection("data");
+                config.save(seasonalYmlFile);
+            } else {
+                config = YamlConfiguration.loadConfiguration(seasonalYmlFile);
+            }
+            this.seasonalFileDatabase = config;
+
+            // Daily stats
+            if (!dailyYmlFile.exists()) {
+                dailyYmlFile.getParentFile().mkdirs();
+                dailyYmlFile.createNewFile();
+
+                config = new YamlConfiguration();
+                config.createSection("data");
+                config.save(dailyYmlFile);
+            } else {
+                config = YamlConfiguration.loadConfiguration(dailyYmlFile);
+            }
+            this.dailyFileDatabase = config;
 
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    private void storeDatabaseStatistic(PlayerStatistic playerStatistic) {
+    private void storeDatabaseStatistic(PlayerStatistic allTimeStatistics, PlayerStatistic seasonalStatistics, PlayerStatistic dailyStatistics) {
         try (Connection connection = Main.getDatabaseManager().getConnection()) {
             connection.setAutoCommit(false);
 
+            // All-time stats
             PreparedStatement preparedStatement = connection
                     .prepareStatement(Main.getDatabaseManager().getWriteObjectSql());
 
-            preparedStatement.setString(1, playerStatistic.getId().toString());
-            preparedStatement.setString(2, playerStatistic.getName());
-            preparedStatement.setInt(3, playerStatistic.getDeaths());
-            preparedStatement.setInt(4, playerStatistic.getDestroyedBeds());
-            preparedStatement.setInt(5, playerStatistic.getKills());
-            preparedStatement.setInt(6, playerStatistic.getLoses());
-            preparedStatement.setInt(7, playerStatistic.getScore());
-            preparedStatement.setInt(8, playerStatistic.getWins());
+            preparedStatement.setString(1, allTimeStatistics.getId().toString());
+            preparedStatement.setString(2, allTimeStatistics.getName());
+            preparedStatement.setInt(3, allTimeStatistics.getDeaths());
+            preparedStatement.setInt(4, allTimeStatistics.getDestroyedBeds());
+            preparedStatement.setInt(5, allTimeStatistics.getKills());
+            preparedStatement.setInt(6, allTimeStatistics.getLoses());
+            preparedStatement.setInt(7, allTimeStatistics.getScore());
+            preparedStatement.setInt(8, allTimeStatistics.getWins());
             preparedStatement.executeUpdate();
+
+            // Seasonal stats
+            preparedStatement = connection
+                    .prepareStatement(Main.getDatabaseManager().getSeasonalWriteObjectSql());
+
+            preparedStatement.setString(1, seasonalStatistics.getId().toString());
+            preparedStatement.setString(2, seasonalStatistics.getName());
+            preparedStatement.setInt(3, seasonalStatistics.getDeaths());
+            preparedStatement.setInt(4, seasonalStatistics.getDestroyedBeds());
+            preparedStatement.setInt(5, seasonalStatistics.getKills());
+            preparedStatement.setInt(6, seasonalStatistics.getLoses());
+            preparedStatement.setInt(7, seasonalStatistics.getScore());
+            preparedStatement.setInt(8, seasonalStatistics.getWins());
+            preparedStatement.executeUpdate();
+
+            // Daily stats
+            preparedStatement = connection
+                    .prepareStatement(Main.getDatabaseManager().getDailyWriteObjectSql());
+
+            preparedStatement.setString(1, dailyStatistics.getId().toString());
+            preparedStatement.setString(2, dailyStatistics.getName());
+            preparedStatement.setInt(3, dailyStatistics.getDeaths());
+            preparedStatement.setInt(4, dailyStatistics.getDestroyedBeds());
+            preparedStatement.setInt(5, dailyStatistics.getKills());
+            preparedStatement.setInt(6, dailyStatistics.getLoses());
+            preparedStatement.setInt(7, dailyStatistics.getScore());
+            preparedStatement.setInt(8, dailyStatistics.getWins());
+            preparedStatement.executeUpdate();
+
+
             connection.commit();
             preparedStatement.close();
         } catch (SQLException e) {
@@ -363,7 +467,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
 
     }
 
-    public void storeStatistic(PlayerStatistic statistic) {
+    public void storeStatistic(PlayerStatistic statistic, PlayerStatistic seasonalStatistic, PlayerStatistic dailyStatistic) {
         BedwarsSavePlayerStatisticEvent savePlayerStatisticEvent = new BedwarsSavePlayerStatisticEvent(statistic);
         Main.getInstance().getServer().getPluginManager().callEvent(savePlayerStatisticEvent);
 
@@ -372,19 +476,40 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         }
 
         if (Main.getConfigurator().config.getString("statistics.type").equalsIgnoreCase("database")) {
-            this.storeDatabaseStatistic(statistic);
+            this.storeDatabaseStatistic(statistic, seasonalStatistic, dailyStatistic);
         } else {
-            this.storeYamlStatistic(statistic);
+            this.storeYamlStatistic(statistic, seasonalStatistic, dailyStatistic);
         }
     }
 
-    private synchronized void storeYamlStatistic(PlayerStatistic statistic) {
-        this.fileDatabase.set("data." + statistic.getId().toString(), null);
-        this.fileDatabase.createSection("data." + statistic.getId().toString(), statistic.serialize());
+    private synchronized void storeYamlStatistic(PlayerStatistic allTimeStatistics, PlayerStatistic seasonalStatistics, PlayerStatistic dailyStatistics) {
+        // Store all-time stats
+        this.fileDatabase.set("data." + allTimeStatistics.getId().toString(), null);
+        this.fileDatabase.createSection("data." + allTimeStatistics.getId().toString(), allTimeStatistics.serialize());
         try {
             this.fileDatabase.save(this.databaseFile);
         } catch (Exception ex) {
-            Main.getInstance().getLogger().warning("Couldn't store statistic data for player with uuid: " + statistic.getId().toString());
+            Main.getInstance().getLogger().warning("Couldn't store statistic data for player with uuid: " + allTimeStatistics.getId().toString());
+            ex.printStackTrace();
+        }
+
+        // Store seasonal stats
+        this.seasonalFileDatabase.set("data." + seasonalStatistics.getId().toString(), null);
+        this.seasonalFileDatabase.createSection("data." + seasonalStatistics.getId().toString(), seasonalStatistics.serialize());
+        try {
+            this.seasonalFileDatabase.save(this.seasonalDatabaseFile);
+        } catch (Exception ex) {
+            Main.getInstance().getLogger().warning("Couldn't store seasonal statistic data for player with uuid: " + seasonalStatistics.getId().toString());
+            ex.printStackTrace();
+        }
+
+        // Store daily stats
+        this.dailyFileDatabase.set("data." + dailyStatistics.getId().toString(), null);
+        this.dailyFileDatabase.createSection("data." + dailyStatistics.getId().toString(), dailyStatistics.serialize());
+        try {
+            this.dailyFileDatabase.save(this.dailyDatabaseFile);
+        } catch (Exception ex) {
+            Main.getInstance().getLogger().warning("Couldn't store daily statistic data for player with uuid: " + dailyStatistics.getId().toString());
             ex.printStackTrace();
         }
     }
@@ -395,10 +520,121 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         }
     }
 
-    public void updateScore(PlayerStatistic playerStatistic) {
+    public void addStatistic(UUID playerId) {
+        if (getStatistic(playerId) != null) {
+            return;
+        }
+
+        allScores.put(playerId, new PlayerStatistic(playerId));
+        if (Main.getLeaderboardHolograms() != null) {
+            Main.getLeaderboardHolograms().updateAllTimeEntries(true);
+        }
+    }
+
+    public void updateAllTImeScore(PlayerStatistic playerStatistic) {
         allScores.put(playerStatistic.getId(), playerStatistic);
         if (Main.getLeaderboardHolograms() != null) {
-            Main.getLeaderboardHolograms().updateEntries();
+            Main.getLeaderboardHolograms().updateAllTimeEntries(true);
         }
+    }
+
+    public void addSeasonalStatistic(UUID playerId) {
+        if (getSeasonalStatistic(playerId) != null) {
+            return;
+        }
+
+        seasonalScores.put(playerId, new PlayerStatistic(playerId));
+        if (Main.getLeaderboardHolograms() != null) {
+            Main.getLeaderboardHolograms().updateSeasonEntries(true);
+        }
+    }
+
+    public void updateSeasonalScore(PlayerStatistic playerStatistic) {
+        seasonalScores.put(playerStatistic.getId(), playerStatistic);
+        if (Main.getLeaderboardHolograms() != null) {
+            Main.getLeaderboardHolograms().updateSeasonEntries(true);
+        }
+    }
+
+    public void addDailyStatistic(UUID playerId) {
+        if (getDailyStatistic(playerId) != null) {
+            return;
+        }
+
+        dailyScores.put(playerId, new PlayerStatistic(playerId));
+    }
+
+    public void updateDailyScore(PlayerStatistic playerStatistic) {
+        dailyScores.put(playerStatistic.getId(), playerStatistic);
+    }
+
+    public void resetSeasonalScores() {
+        seasonalScores.clear();
+
+        if (seasonalFileDatabase != null) {
+            seasonalFileDatabase.set("data", null); // remove old section
+            seasonalFileDatabase.createSection("data");
+            // Create new data for online players to prevent issues
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                PlayerStatistic statistic = new PlayerStatistic(player.getUniqueId());
+                this.seasonalFileDatabase.createSection("data." + statistic.getId().toString(), statistic.serialize());
+                seasonalScores.put(player.getUniqueId(), statistic);
+            }
+            try {
+                seasonalFileDatabase.save(this.seasonalDatabaseFile);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            try (Connection connection = Main.getDatabaseManager().getConnection()) {
+                connection.setAutoCommit(false);
+
+                PreparedStatement preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getSeasonalResetSql());
+
+                preparedStatement.executeUpdate();
+
+                connection.commit();
+                preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        Main.getLeaderboardHolograms().updateSeasonEntries(true);
+    }
+
+    public void resetDailyScores() {
+        dailyScores.clear();
+
+        if (dailyFileDatabase != null) {
+            dailyFileDatabase.set("data", null); // remove old section
+            dailyFileDatabase.createSection("data");
+            // Create new data for online players to prevent issues
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                PlayerStatistic statistic = new PlayerStatistic(player.getUniqueId());
+                this.dailyFileDatabase.createSection("data." + statistic.getId().toString(), statistic.serialize());
+                dailyScores.put(player.getUniqueId(), statistic);
+            }
+            try {
+                dailyFileDatabase.save(this.dailyDatabaseFile);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            try (Connection connection = Main.getDatabaseManager().getConnection()) {
+                connection.setAutoCommit(false);
+
+                PreparedStatement preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getDailyResetSql());
+
+                preparedStatement.executeUpdate();
+
+                connection.commit();
+                preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 }

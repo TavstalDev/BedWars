@@ -23,10 +23,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.screamingsandals.bedwars.Main;
+import org.screamingsandals.bedwars.api.statistics.ELeaderboardKind;
+import org.screamingsandals.bedwars.api.statistics.ELeaderboardStatType;
 import org.screamingsandals.bedwars.api.statistics.LeaderboardEntry;
 import org.screamingsandals.bedwars.commands.BaseCommand;
 import org.screamingsandals.bedwars.lib.nms.holograms.Hologram;
@@ -35,6 +36,7 @@ import org.screamingsandals.bedwars.lib.nms.holograms.TouchHandler;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import static org.screamingsandals.bedwars.lib.lang.I.i18n;
 import static org.screamingsandals.bedwars.lib.lang.I.i18nonly;
@@ -42,10 +44,10 @@ import static org.screamingsandals.bedwars.lib.lang.I.i18nonly;
 public class LeaderboardHolograms implements TouchHandler {
     private ArrayList<HologramLocation> hologramLocations;
     private Map<HologramLocation, Hologram> holograms;
-    private Map<ELeaderboardType, List<LeaderboardEntry>> entries;
+    private Map<ELeaderboardKind, Map<ELeaderboardStatType, List<LeaderboardEntry>>> entries;
 
-    public void addHologramLocation(Location eyeLocation, ELeaderboardType type) {
-        this.hologramLocations.add(new HologramLocation(eyeLocation.subtract(0, 3, 0), type));
+    public void addHologramLocation(Location eyeLocation, ELeaderboardStatType type, ELeaderboardKind kind) {
+        this.hologramLocations.add(new HologramLocation(eyeLocation.subtract(0, 3, 0), type, kind));
         this.updateHologramDatabase();
 
         if (entries == null) {
@@ -65,13 +67,39 @@ public class LeaderboardHolograms implements TouchHandler {
         }
 
         this.entries.clear(); // Make sure to clear previous entries
-        this.entries.put(ELeaderboardType.Score, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.size")));
-        this.entries.put(ELeaderboardType.Kills, Main.getPlayerStatisticsManager().getKillLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.killSize")));
-        this.entries.put(ELeaderboardType.Deaths, Main.getPlayerStatisticsManager().getDeathLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.deathSize")));
-        this.entries.put(ELeaderboardType.Wins, Main.getPlayerStatisticsManager().getWinLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.winSize")));
-        this.entries.put(ELeaderboardType.Loses, Main.getPlayerStatisticsManager().getLoseLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.loseSize")));
-        this.entries.put(ELeaderboardType.DestroyedBeds, Main.getPlayerStatisticsManager().getBedLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.destroyedBedSize")));
+        updateAllTimeEntries(false);
+        updateSeasonEntries(false);
         updateHolograms();
+    }
+
+    public void updateAllTimeEntries(boolean updateHolograms) {
+        Map<ELeaderboardStatType, List<LeaderboardEntry>> map = new HashMap<>();
+        map.put(ELeaderboardStatType.Score, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.size"), ELeaderboardStatType.Score, ELeaderboardKind.AllTime));
+        map.put(ELeaderboardStatType.Kills, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.killSize"), ELeaderboardStatType.Kills, ELeaderboardKind.AllTime));
+        map.put(ELeaderboardStatType.Deaths, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.deathSize"), ELeaderboardStatType.Deaths, ELeaderboardKind.AllTime));
+        map.put(ELeaderboardStatType.Wins, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.winSize"), ELeaderboardStatType.Wins, ELeaderboardKind.AllTime));
+        map.put(ELeaderboardStatType.Loses, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.loseSize"), ELeaderboardStatType.Loses, ELeaderboardKind.AllTime));
+        map.put(ELeaderboardStatType.DestroyedBeds, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.destroyedBedSize"), ELeaderboardStatType.DestroyedBeds, ELeaderboardKind.AllTime));
+        this.entries.put(ELeaderboardKind.AllTime, map);
+
+        if (updateHolograms) {
+            updateHolograms();
+        }
+    }
+
+    public void updateSeasonEntries(boolean updateHolograms) {
+        Map<ELeaderboardStatType, List<LeaderboardEntry>> map = new HashMap<>();
+        map.put(ELeaderboardStatType.Score, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.size"), ELeaderboardStatType.Score, ELeaderboardKind.Season));
+        map.put(ELeaderboardStatType.Kills, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.killSize"), ELeaderboardStatType.Kills, ELeaderboardKind.Season));
+        map.put(ELeaderboardStatType.Deaths, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.deathSize"), ELeaderboardStatType.Deaths, ELeaderboardKind.Season));
+        map.put(ELeaderboardStatType.Wins, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.winSize"), ELeaderboardStatType.Wins, ELeaderboardKind.Season));
+        map.put(ELeaderboardStatType.Loses, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.loseSize"), ELeaderboardStatType.Loses, ELeaderboardKind.Season));
+        map.put(ELeaderboardStatType.DestroyedBeds, Main.getPlayerStatisticsManager().getLeaderboard(Main.getConfigurator().config.getInt("holograms.leaderboard.destroyedBedSize"), ELeaderboardStatType.DestroyedBeds, ELeaderboardKind.Season));
+        this.entries.put(ELeaderboardKind.Season, map);
+
+        if (updateHolograms) {
+            updateHolograms();
+        }
     }
 
     public void loadHolograms() {
@@ -112,10 +140,11 @@ public class LeaderboardHolograms implements TouchHandler {
                     double z = (double) locationData.get("z");
                     float pitch = ((Double) locationData.get("pitch")).floatValue();
                     float yaw = ((Double) locationData.get("yaw")).floatValue();
-                    ELeaderboardType leaderboardType = ELeaderboardType.valueOf((String) locationData.get("leaderboardType"));
+                    ELeaderboardStatType leaderboardType = ELeaderboardStatType.valueOf((String) locationData.get("leaderboardType"));
+                    ELeaderboardKind kind = ELeaderboardKind.valueOf((String)locationData.get("leaderboardKind"));
 
                     Location loc = new Location(world, x, y, z, yaw, pitch);
-                    HologramLocation hologramLoc = new HologramLocation(loc, leaderboardType);
+                    HologramLocation hologramLoc = new HologramLocation(loc, leaderboardType, kind);
                     hologramLocations.add(hologramLoc);
                 }
             } catch (Throwable t) {
@@ -150,6 +179,7 @@ public class LeaderboardHolograms implements TouchHandler {
                 locationData.put("pitch", loc.getPitch());
                 locationData.put("yaw", loc.getYaw());
                 locationData.put("leaderboardType", loc.leaderboardType.name()); // Save the enum as a string
+                locationData.put("leaderboardKind", loc.leaderboardKind.name());
                 serializedLocations.add(locationData);
             }
 
@@ -183,16 +213,17 @@ public class LeaderboardHolograms implements TouchHandler {
                 holograms.put(location, Main.getHologramManager().spawnHologramTouchable(location));
                 holograms.get(location).addHandler(this);
             }
-            updateHologram(location.leaderboardType, holograms.get(location));
+            updateHologram(location.leaderboardType, location.leaderboardKind, holograms.get(location));
         });
         Bukkit.getOnlinePlayers().forEach(this::addViewer);
     }
 
-    private void updateHologram(final  ELeaderboardType type, final Hologram holo) {
+    private void updateHologram(final ELeaderboardStatType type, final ELeaderboardKind kind, final Hologram holo) {
         List<String> lines = new ArrayList<>();
 
         lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headTopWrapper")));
-        String title = Main.getConfigurator().config.getString("holograms.leaderboard.headTitle");
+        // Daily is not supported
+        String title = kind == ELeaderboardKind.Season ? Main.getConfigurator().config.getString("holograms.leaderboard.seasonTitle") : Main.getConfigurator().config.getString("holograms.leaderboard.allTimeTitle");
         if (title != null && !title.isEmpty())
             lines.add(ChatColor.translateAlternateColorCodes('&', title));
 
@@ -231,7 +262,9 @@ public class LeaderboardHolograms implements TouchHandler {
             lines.add(i18nonly("leaderboard_no_scores"));
         } else {
             AtomicInteger l = new AtomicInteger(1);
-            entries.get(type).forEach(leaderboardEntry -> {
+            entries.get(kind).get(type).forEach(leaderboardEntry -> {
+                Main.getInstance().getLogger().log(Level.WARNING, "Leaderboard kind: " + kind.name() + ", type: " + type.name());
+                Main.getInstance().getLogger().log(Level.WARNING, "Leaderboard entry: " + leaderboardEntry.getPlayer().getName() + " with score " + leaderboardEntry.getTotalScore());
                 lines.add(line.replace("%name%", leaderboardEntry.getPlayer().getName() != null ? leaderboardEntry.getPlayer().getName() : (leaderboardEntry.getLatestKnownName() != null ? leaderboardEntry.getLatestKnownName() : leaderboardEntry.getPlayer().getUniqueId().toString())).replace("%score%", Integer.toString(leaderboardEntry.getTotalScore())).replace("%order%", Integer.toString(l.getAndIncrement())));
             });
         }

@@ -23,6 +23,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 import org.screamingsandals.bedwars.Main;
 
 import java.util.HashMap;
@@ -102,7 +103,6 @@ public class PlayerStatistic implements ConfigurationSerializable, org.screaming
     @Override
     public void addScore(int score) {
         this.score += score;
-        Main.getPlayerStatisticsManager().updateScore(this);
     }
 
     @Override
@@ -131,7 +131,7 @@ public class PlayerStatistic implements ConfigurationSerializable, org.screaming
     }
 
     @Override
-    public Map<String, Object> serialize() {
+    public @NotNull Map<String, Object> serialize() {
         HashMap<String, Object> playerStatistic = new HashMap<>();
         playerStatistic.put("deaths", this.deaths);
         playerStatistic.put("destroyedBeds", this.destroyedBeds);

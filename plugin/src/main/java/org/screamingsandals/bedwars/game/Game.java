@@ -78,6 +78,7 @@ import org.screamingsandals.bedwars.listener.Player116ListenerUtils;
 import org.screamingsandals.bedwars.region.FlatteningRegion;
 import org.screamingsandals.bedwars.region.LegacyRegion;
 import org.screamingsandals.bedwars.statistics.PlayerStatistic;
+import org.screamingsandals.bedwars.statistics.PlayerStatisticManager;
 import org.screamingsandals.bedwars.utils.*;
 import org.screamingsandals.bedwars.lib.debug.Debug;
 import org.screamingsandals.bedwars.lib.nms.entity.EntityUtils;
@@ -691,8 +692,19 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                     if (broker != null) {
                         if (Main.isPlayerStatisticsEnabled()) {
                             PlayerStatistic statistic = Main.getPlayerStatisticsManager().getStatistic(broker);
+                            // TODO: Clean this up
+                            PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(broker);
+                            PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(broker);
                             statistic.addDestroyedBeds(1);
-                            statistic.addScore(Main.getConfigurator().config.getInt("statistics.scores.bed-destroy", 25));
+                            seasonalStatistic.addDestroyedBeds(1);
+                            dailyStatistic.addDestroyedBeds(1);
+                            int score = Main.getConfigurator().config.getInt("statistics.scores.bed-destroy", 25);
+                            statistic.addScore(score);
+                            seasonalStatistic.addScore(score);
+                            dailyStatistic.addScore(score);
+                            Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
+                            Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
+                            Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
                             Main.depositPlayer(broker, Main.getVaultBedDestroyReward());
                         }
 
@@ -898,7 +910,9 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
 
         if (Main.isPlayerStatisticsEnabled()) {
             PlayerStatistic statistic = Main.getPlayerStatisticsManager().getStatistic(gamePlayer.player);
-            Main.getPlayerStatisticsManager().storeStatistic(statistic);
+            PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(gamePlayer.player);
+            PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(gamePlayer.player);
+            Main.getPlayerStatisticsManager().storeStatistic(statistic, seasonalStatistic, dailyStatistic);
 
             Main.getPlayerStatisticsManager().unloadStatistic(gamePlayer.player);
         }
@@ -2201,11 +2215,23 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                             if (Main.isPlayerStatisticsEnabled()) {
                                                 PlayerStatistic statistic = Main.getPlayerStatisticsManager()
                                                         .getStatistic(player.player);
+                                                // TODO: Clean up
+                                                PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(player.player);
+                                                PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(player.player);
                                                 statistic.addWins(1);
-                                                statistic.addScore(Main.getConfigurator().config.getInt("statistics.scores.win", 50));
+                                                seasonalStatistic.addWins(1);
+                                                dailyStatistic.addWins(1);
+                                                int score = Main.getConfigurator().config.getInt("statistics.scores.win", 50);
+                                                statistic.addScore(score);
+                                                seasonalStatistic.addScore(score);
+                                                dailyStatistic.addScore(score);
+                                                Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
+                                                Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
+                                                Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
 
                                                 if (madeRecord) {
                                                     statistic.addScore(Main.getConfigurator().config.getInt("statistics.scores.record", 100));
+                                                    Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
                                                 }
 
                                                 if (Main.isHologramsEnabled()) {

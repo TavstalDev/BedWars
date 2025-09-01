@@ -141,9 +141,19 @@ public class PlayerListener implements Listener {
                     team.getScoreboardTeam().removeEntry(victim.getName());
                     if (Main.isPlayerStatisticsEnabled()) {
                         PlayerStatistic statistic = Main.getPlayerStatisticsManager().getStatistic(victim);
+                        // TODO: Clean this up
+                        PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(victim);
+                        PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(victim);
                         statistic.addLoses(1);
-                        statistic.addScore(Main.getConfigurator().config.getInt("statistics.scores.lose", 0));
-
+                        seasonalStatistic.addLoses(1);
+                        dailyStatistic.addLoses(1);
+                        int score = Main.getConfigurator().config.getInt("statistics.scores.lose", 0);
+                        statistic.addScore(score);
+                        seasonalStatistic.addScore(score);
+                        dailyStatistic.addScore(score);
+                        Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
+                        Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
+                        Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
                     }
                     game.updateScoreboard();
                 }
@@ -192,24 +202,47 @@ public class PlayerListener implements Listener {
                 }
 
                 if (Main.isPlayerStatisticsEnabled()) {
+                    // TODO: Clean this up
                     PlayerStatistic diePlayer = Main.getPlayerStatisticsManager().getStatistic(victim);
+                    PlayerStatistic dieSeasonPlayer = Main.getPlayerStatisticsManager().getSeasonalStatistic(victim);
+                    PlayerStatistic dieDailyPlayer = Main.getPlayerStatisticsManager().getDailyStatistic(victim);
                     PlayerStatistic killerPlayer;
 
                     if (!onlyOnBedDestroy || !isBed) {
                         diePlayer.addDeaths(1);
-                        diePlayer.addScore(Main.getConfigurator().config.getInt("statistics.scores.die", 0));
+                        dieSeasonPlayer.addDeaths(1);
+                        dieDailyPlayer.addDeaths(1);
+                        int deathScore = Main.getConfigurator().config.getInt("statistics.scores.die", 0);
+                        diePlayer.addScore(deathScore);
+                        dieSeasonPlayer.addScore(deathScore);
+                        dieDailyPlayer.addScore(deathScore);
+                        Main.getPlayerStatisticsManager().updateAllTImeScore(diePlayer);
+                        Main.getPlayerStatisticsManager().updateSeasonalScore(dieSeasonPlayer);
+                        Main.getPlayerStatisticsManager().updateDailyScore(dieDailyPlayer);
                     }
 
                     if (killer != null) {
                         if (!onlyOnBedDestroy || !isBed) {
                             killerPlayer = Main.getPlayerStatisticsManager().getStatistic(killer);
+                            // TODO: Clean this up
+                            PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(killer);
+                            PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(killer);
                             if (killerPlayer != null) {
                                 killerPlayer.addKills(1);
-                                killerPlayer.addScore(Main.getConfigurator().config.getInt("statistics.scores.kill", 10));
+                                seasonalStatistic.addKills(1);
+                                dailyStatistic.addKills(1);
+                                int killScore = Main.getConfigurator().config.getInt("statistics.scores.kill", 10);
+                                killerPlayer.addScore(killScore);
+                                seasonalStatistic.addScore(killScore);
+                                dailyStatistic.addScore(killScore);
+                                Main.getPlayerStatisticsManager().updateAllTImeScore(killerPlayer);
+                                Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
+                                Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
                             }
 
-                            if (!isBed) {
+                            if (!isBed && killerPlayer != null) {
                                 killerPlayer.addScore(Main.getConfigurator().config.getInt("statistics.scores.final-kill", 0));
+                                Main.getPlayerStatisticsManager().updateAllTImeScore(killerPlayer);
                             }
                         }
                     }
@@ -348,7 +381,9 @@ public class PlayerListener implements Listener {
         }
 
         if (Main.isPlayerStatisticsEnabled()) {
-            Main.getPlayerStatisticsManager().loadStatistic(event.getPlayer().getUniqueId());
+            Main.getPlayerStatisticsManager().addStatistic(player.getUniqueId());
+            Main.getPlayerStatisticsManager().addSeasonalStatistic(player.getUniqueId());
+            Main.getPlayerStatisticsManager().addDailyStatistic(player.getUniqueId());
         }
     }
 
