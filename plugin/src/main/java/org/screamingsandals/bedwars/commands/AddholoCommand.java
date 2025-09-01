@@ -22,7 +22,8 @@ package org.screamingsandals.bedwars.commands;
 import org.screamingsandals.bedwars.Main;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.screamingsandals.bedwars.holograms.ELeaderboardType;
+import org.screamingsandals.bedwars.api.statistics.ELeaderboardKind;
+import org.screamingsandals.bedwars.api.statistics.ELeaderboardStatType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,44 +44,63 @@ public class AddholoCommand extends BaseCommand {
         } else {
             if (args.size() >= 1 && args.get(0).equalsIgnoreCase("leaderboard")) {
 
-                if (args.size() < 2) {
-                    player.sendMessage(i18n("leaderboard_type_missing"));
+                if (args.size() < 3) {
+                    player.sendMessage(i18n("leaderboard_arg_missing"));
                     return true;
                 }
 
+                ELeaderboardKind kind;
                 switch (args.get(1).toLowerCase()) {
+                    case "alltime":
+                    case "all":
+                    case "overall": {
+                        kind = ELeaderboardKind.AllTime;
+                        break;
+                    }
+                    case "season":
+                    case "s": {
+                        kind = ELeaderboardKind.Season;
+                        break;
+                    }
+                    default: {
+                        player.sendMessage(i18n("leaderboard_kind_invalid"));
+                        return true;
+                    }
+                }
+
+                switch (args.get(2).toLowerCase()) {
                     case "w":
                     case "win":
                     case "wins": {
-                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Wins);
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardStatType.Wins, kind);
                         break;
                     }
                     case "l":
                     case "loss":
                     case "lose":
                     case "loses": {
-                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Loses);
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardStatType.Loses, kind);
                         break;
                     }
                     case "k":
                     case "kill":
                     case "kills": {
-                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Kills);
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardStatType.Kills, kind);
                         break;
                     }
                     case "d":
                     case "death":
                     case "deaths": {
-                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Deaths);
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardStatType.Deaths, kind);
                         break;
                     }
                     case "beds":
                     case "beds_destroyed": {
-                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.DestroyedBeds);
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardStatType.DestroyedBeds, kind);
                         break;
                     }
                     case "score": {
-                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardType.Score);
+                        Main.getLeaderboardHolograms().addHologramLocation(player.getEyeLocation(), ELeaderboardStatType.Score, kind);
                         break;
                     }
                     default: {
@@ -105,6 +125,9 @@ public class AddholoCommand extends BaseCommand {
             completion.addAll(Arrays.asList("leaderboard", "stats"));
         }
         else if (args.size() == 2 && args.get(0).equalsIgnoreCase("leaderboard")) {
+            completion.addAll(Arrays.asList("alltime", "season"));
+        }
+        else if (args.size() == 3 && args.get(0).equalsIgnoreCase("leaderboard")) {
             completion.addAll(Arrays.asList("wins", "loses", "kills", "deaths", "beds_destroyed", "score"));
         }
     }
