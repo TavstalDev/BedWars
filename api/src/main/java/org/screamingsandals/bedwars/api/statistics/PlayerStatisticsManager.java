@@ -26,10 +26,11 @@ public interface PlayerStatisticsManager {
     
     PlayerStatistic getStatistic(UUID uuid);
 
+    PlayerStatistic getSeasonalStatistic(UUID uuid);
+
+    PlayerStatistic getDailyStatistic(UUID uuid);
+
     List<LeaderboardEntry> getLeaderboard(int count);
 
-    /**
-     * @see #getStatistic(UUID) 
-     */
-    PlayerStatistic loadStatistic(UUID uuid);
+    List<LeaderboardEntry> getLeaderboard(int count, ELeaderboardStatType stat, ELeaderboardKind kind);
 }
