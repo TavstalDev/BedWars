@@ -910,11 +910,10 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
         }
 
         if (Main.isPlayerStatisticsEnabled()) {
-            PlayerStatistic statistic = Main.getPlayerStatisticsManager().getStatistic(gamePlayer.player);
-            PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(gamePlayer.player);
-            PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(gamePlayer.player);
+            PlayerStatistic statistic = Main.getPlayerStatisticsManager().getStatistic(gamePlayer.player.getUniqueId());
+            PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(gamePlayer.player.getUniqueId());
+            PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(gamePlayer.player.getUniqueId());
             Main.getPlayerStatisticsManager().storeStatistic(statistic, seasonalStatistic, dailyStatistic);
-
             Main.getPlayerStatisticsManager().unloadStatistic(gamePlayer.player);
         }
 

@@ -203,22 +203,38 @@ public class PlayerListener implements Listener {
 
                 if (Main.isPlayerStatisticsEnabled()) {
                     // TODO: Clean this up
-                    PlayerStatistic diePlayer = Main.getPlayerStatisticsManager().getStatistic(victim);
-                    PlayerStatistic dieSeasonPlayer = Main.getPlayerStatisticsManager().getSeasonalStatistic(victim);
-                    PlayerStatistic dieDailyPlayer = Main.getPlayerStatisticsManager().getDailyStatistic(victim);
                     PlayerStatistic killerPlayer;
+                    int deathScore = Main.getConfigurator().config.getInt("statistics.scores.die", 0);
 
                     if (!onlyOnBedDestroy || !isBed) {
-                        diePlayer.addDeaths(1);
-                        dieSeasonPlayer.addDeaths(1);
-                        dieDailyPlayer.addDeaths(1);
-                        int deathScore = Main.getConfigurator().config.getInt("statistics.scores.die", 0);
-                        diePlayer.addScore(deathScore);
-                        dieSeasonPlayer.addScore(deathScore);
-                        dieDailyPlayer.addScore(deathScore);
-                        Main.getPlayerStatisticsManager().updateAllTImeScore(diePlayer);
-                        Main.getPlayerStatisticsManager().updateSeasonalScore(dieSeasonPlayer);
-                        Main.getPlayerStatisticsManager().updateDailyScore(dieDailyPlayer);
+                        PlayerStatistic diePlayer = Main.getPlayerStatisticsManager().getStatistic(victim);
+                        PlayerStatistic dieSeasonPlayer = Main.getPlayerStatisticsManager().getSeasonalStatistic(victim);
+                        PlayerStatistic dieDailyPlayer = Main.getPlayerStatisticsManager().getDailyStatistic(victim);
+
+                        if (diePlayer != null) {
+                            diePlayer.addDeaths(1);
+                            diePlayer.addScore(deathScore);
+                            Main.getPlayerStatisticsManager().updateAllTImeScore(diePlayer);
+                        }
+                        else
+                            Main.getInstance().getLogger().warning("Die player is null for " + victim.getName());
+
+                        if (dieSeasonPlayer != null) {
+                            dieSeasonPlayer.addDeaths(1);
+                            dieSeasonPlayer.addScore(deathScore);
+                            Main.getPlayerStatisticsManager().updateSeasonalScore(dieSeasonPlayer);
+                        }
+                        else
+                            Main.getInstance().getLogger().warning("Die season player is null for " + victim.getName());
+
+
+                        if (dieDailyPlayer != null) {
+                            dieDailyPlayer.addDeaths(1);
+                            dieDailyPlayer.addScore(deathScore);
+                            Main.getPlayerStatisticsManager().updateDailyScore(dieDailyPlayer);
+                        }
+                        else
+                            Main.getInstance().getLogger().warning("Die daily player is null for " + victim.getName());
                     }
 
                     if (killer != null) {
@@ -227,18 +243,30 @@ public class PlayerListener implements Listener {
                             // TODO: Clean this up
                             PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(killer);
                             PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(killer);
+                            int killScore = Main.getConfigurator().config.getInt("statistics.scores.kill", 10);
                             if (killerPlayer != null) {
                                 killerPlayer.addKills(1);
-                                seasonalStatistic.addKills(1);
-                                dailyStatistic.addKills(1);
-                                int killScore = Main.getConfigurator().config.getInt("statistics.scores.kill", 10);
                                 killerPlayer.addScore(killScore);
-                                seasonalStatistic.addScore(killScore);
-                                dailyStatistic.addScore(killScore);
                                 Main.getPlayerStatisticsManager().updateAllTImeScore(killerPlayer);
+                            }
+                            else
+                                Main.getInstance().getLogger().warning("Killer player is null for " + killer.getName());
+
+                            if (seasonalStatistic != null) {
+                                seasonalStatistic.addKills(1);
+                                seasonalStatistic.addScore(killScore);
                                 Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
+                            }
+                            else
+                                Main.getInstance().getLogger().warning("Killer seasonal player is null for " + killer.getName());
+
+                            if (dailyStatistic != null) {
+                                dailyStatistic.addKills(1);
+                                dailyStatistic.addScore(killScore);
                                 Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
                             }
+                            else
+                                Main.getInstance().getLogger().warning("Killer daily player is null for " + killer.getName());
 
                             if (!isBed && killerPlayer != null) {
                                 killerPlayer.addScore(Main.getConfigurator().config.getInt("statistics.scores.final-kill", 0));

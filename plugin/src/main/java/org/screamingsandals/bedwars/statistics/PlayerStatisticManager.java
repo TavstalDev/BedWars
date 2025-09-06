@@ -420,49 +420,61 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             PreparedStatement preparedStatement = connection
                     .prepareStatement(Main.getDatabaseManager().getWriteObjectSql());
 
-            preparedStatement.setString(1, allTimeStatistics.getId().toString());
-            preparedStatement.setString(2, allTimeStatistics.getName());
-            preparedStatement.setInt(3, allTimeStatistics.getDeaths());
-            preparedStatement.setInt(4, allTimeStatistics.getDestroyedBeds());
-            preparedStatement.setInt(5, allTimeStatistics.getKills());
-            preparedStatement.setInt(6, allTimeStatistics.getLoses());
-            preparedStatement.setInt(7, allTimeStatistics.getScore());
-            preparedStatement.setInt(8, allTimeStatistics.getWins());
-            preparedStatement.executeUpdate();
+            if (allTimeStatistics != null) {
+                preparedStatement.setString(1, allTimeStatistics.getId().toString());
+                preparedStatement.setString(2, allTimeStatistics.getName());
+                preparedStatement.setInt(3, allTimeStatistics.getDeaths());
+                preparedStatement.setInt(4, allTimeStatistics.getDestroyedBeds());
+                preparedStatement.setInt(5, allTimeStatistics.getKills());
+                preparedStatement.setInt(6, allTimeStatistics.getLoses());
+                preparedStatement.setInt(7, allTimeStatistics.getScore());
+                preparedStatement.setInt(8, allTimeStatistics.getWins());
+                preparedStatement.executeUpdate();
+            }
+            else
+                Main.getInstance().getLogger().warning("Tried to store null all-time statistics!");
 
             // Seasonal stats
-            preparedStatement = connection
-                    .prepareStatement(Main.getDatabaseManager().getSeasonalWriteObjectSql());
+            if (seasonalStatistics != null) {
+                preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getSeasonalWriteObjectSql());
 
-            preparedStatement.setString(1, seasonalStatistics.getId().toString());
-            preparedStatement.setString(2, seasonalStatistics.getName());
-            preparedStatement.setInt(3, seasonalStatistics.getDeaths());
-            preparedStatement.setInt(4, seasonalStatistics.getDestroyedBeds());
-            preparedStatement.setInt(5, seasonalStatistics.getKills());
-            preparedStatement.setInt(6, seasonalStatistics.getLoses());
-            preparedStatement.setInt(7, seasonalStatistics.getScore());
-            preparedStatement.setInt(8, seasonalStatistics.getWins());
-            preparedStatement.executeUpdate();
+                preparedStatement.setString(1, seasonalStatistics.getId().toString());
+                preparedStatement.setString(2, seasonalStatistics.getName());
+                preparedStatement.setInt(3, seasonalStatistics.getDeaths());
+                preparedStatement.setInt(4, seasonalStatistics.getDestroyedBeds());
+                preparedStatement.setInt(5, seasonalStatistics.getKills());
+                preparedStatement.setInt(6, seasonalStatistics.getLoses());
+                preparedStatement.setInt(7, seasonalStatistics.getScore());
+                preparedStatement.setInt(8, seasonalStatistics.getWins());
+                preparedStatement.executeUpdate();
+            }
+            else
+                Main.getInstance().getLogger().warning("Tried to store null seasonal statistics!");
 
             // Daily stats
-            preparedStatement = connection
-                    .prepareStatement(Main.getDatabaseManager().getDailyWriteObjectSql());
+            if (dailyStatistics != null) {
+                preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getDailyWriteObjectSql());
 
-            preparedStatement.setString(1, dailyStatistics.getId().toString());
-            preparedStatement.setString(2, dailyStatistics.getName());
-            preparedStatement.setInt(3, dailyStatistics.getDeaths());
-            preparedStatement.setInt(4, dailyStatistics.getDestroyedBeds());
-            preparedStatement.setInt(5, dailyStatistics.getKills());
-            preparedStatement.setInt(6, dailyStatistics.getLoses());
-            preparedStatement.setInt(7, dailyStatistics.getScore());
-            preparedStatement.setInt(8, dailyStatistics.getWins());
-            preparedStatement.executeUpdate();
-
+                preparedStatement.setString(1, dailyStatistics.getId().toString());
+                preparedStatement.setString(2, dailyStatistics.getName());
+                preparedStatement.setInt(3, dailyStatistics.getDeaths());
+                preparedStatement.setInt(4, dailyStatistics.getDestroyedBeds());
+                preparedStatement.setInt(5, dailyStatistics.getKills());
+                preparedStatement.setInt(6, dailyStatistics.getLoses());
+                preparedStatement.setInt(7, dailyStatistics.getScore());
+                preparedStatement.setInt(8, dailyStatistics.getWins());
+                preparedStatement.executeUpdate();
+            }
+            else
+                Main.getInstance().getLogger().warning("Tried to store null daily statistics!");
 
             connection.commit();
             preparedStatement.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().warning("Couldn't store statistic data for player.");
+            Main.getInstance().getLogger().severe(e.getMessage());
         }
 
     }
@@ -490,7 +502,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             this.fileDatabase.save(this.databaseFile);
         } catch (Exception ex) {
             Main.getInstance().getLogger().warning("Couldn't store statistic data for player with uuid: " + allTimeStatistics.getId().toString());
-            ex.printStackTrace();
+            Main.getInstance().getLogger().severe(ex.getMessage());
         }
 
         // Store seasonal stats
@@ -500,7 +512,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             this.seasonalFileDatabase.save(this.seasonalDatabaseFile);
         } catch (Exception ex) {
             Main.getInstance().getLogger().warning("Couldn't store seasonal statistic data for player with uuid: " + seasonalStatistics.getId().toString());
-            ex.printStackTrace();
+            Main.getInstance().getLogger().severe(ex.getMessage());
         }
 
         // Store daily stats
@@ -510,7 +522,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             this.dailyFileDatabase.save(this.dailyDatabaseFile);
         } catch (Exception ex) {
             Main.getInstance().getLogger().warning("Couldn't store daily statistic data for player with uuid: " + dailyStatistics.getId().toString());
-            ex.printStackTrace();
+            Main.getInstance().getLogger().severe(ex.getMessage());
         }
     }
 
