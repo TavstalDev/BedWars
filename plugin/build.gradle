@@ -2,6 +2,14 @@ import org.apache.tools.ant.filters.*
 
 apply plugin: "com.github.gmazzo.buildconfig"
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+    flatDir {
+        dirs 'repo'
+    }
+}
+
 dependencies {
     /* PROVIDED */
     compileOnly 'net.milkbowl.vault:VaultAPI:1.7'
@@ -17,6 +25,7 @@ dependencies {
     compileOnly 'net.citizensnpcs:citizens-main:2.0.30-SNAPSHOT'
     compileOnly 'com.alessiodp.parties:parties-api:3.2.6'
     compileOnly 'com.viaversion:viaversion-api:4.4.1'
+    compileOnly name: 'BanyaszApi-1.0.0'
 
     /* SHADED */
     implementation project(':BedWars-API')

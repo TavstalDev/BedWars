@@ -22,6 +22,7 @@ name: BedWars
 version: "@version@"
 authors:
   - "ScreamingSandals <Misat11, Iamceph, Pronze, ZlataOvce>"
+  - "Tavstal"
 api-version: 1.13
 load: POSTWORLD
 softdepend:
@@ -37,6 +38,7 @@ softdepend:
   - Citizens
   - Parties
   - ViaVersion
+  - BanyaszLib
 commands:
   bw:
     description: Command of BW plugin

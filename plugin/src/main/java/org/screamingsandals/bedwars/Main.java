@@ -72,6 +72,7 @@ import org.screamingsandals.bedwars.utils.VersionFallback;
 import org.screamingsandals.simpleinventories.listeners.InventoryListener;
 import org.screamingsandals.simpleinventories.utils.MaterialSearchEngine;
 import org.screamingsandals.simpleinventories.utils.StackParser;
+import io.github.tavstaldev.banyaszLib.api.BanyaszApi;
 
 import java.io.File;
 import java.io.IOException;
@@ -111,6 +112,9 @@ public class Main extends JavaPlugin implements BedwarsAPI {
     private Metrics metrics;
     private Game selectedGame;
     private boolean preSelectGames;
+    private final Random random = new Random();
+    private boolean isBanyasz = false;
+    private @Nullable BanyaszApi banyaszApi;
 
     static {
         // ColorChanger list of materials
@@ -372,6 +376,20 @@ public class Main extends JavaPlugin implements BedwarsAPI {
         return instance.tabManager;
     }
 
+    public static boolean getIsBanyasz() {
+        return instance.isBanyasz;
+    }
+
+    public static @Nullable BanyaszApi getBanyaszApi() {
+        return instance.banyaszApi;
+    }
+
+    public static int getCoinsReward() {
+        int min = instance.configurator.config.getInt("banyasz.minCoins", 10);
+        int max = instance.configurator.config.getInt("banyasz.maxCoins", 20);
+        return instance.random.nextInt(max - min + 1) + min;
+    }
+
     public void onEnable() {
         instance = this;
         version = this.getDescription().getVersion();
@@ -384,6 +402,13 @@ public class Main extends JavaPlugin implements BedwarsAPI {
             isVault = false;
         } else {
             isVault = setupEconomy();
+        }
+
+        if (!getServer().getPluginManager().isPluginEnabled("BanyaszLib")) {
+            isBanyasz = false;
+        } else {
+            isBanyasz = true;
+            banyaszApi = BanyaszApi.getInstance();
         }
 
         String[] bukkitVersion = Bukkit.getBukkitVersion().split("-")[0].split("\\.");

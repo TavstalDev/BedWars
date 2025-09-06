@@ -675,6 +675,10 @@ public class Configurator {
         checkOrSetConfig(modify, "party.autojoin-members", false);
         checkOrSetConfig(modify, "party.notify-when-warped", true);
 
+        checkOrSetConfig(modify,"banyaszLib.enable", true);
+        checkOrSetConfig(modify,"banyaszLib.minCoins", 10);
+        checkOrSetConfig(modify,"banyaszLib.maxCoins", 50);
+
         checkOrSetConfig(modify, "version", 2);
 
         if (modify.get()) {

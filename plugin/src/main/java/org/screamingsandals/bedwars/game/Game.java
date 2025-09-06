@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import io.github.tavstaldev.banyaszLib.api.BanyaszApi;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -2228,6 +2229,18 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                                 Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
                                                 Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
                                                 Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
+
+                                                // Send coins to player
+                                                if (Main.getIsBanyasz()) {
+                                                    BanyaszApi api = Main.getBanyaszApi();
+                                                    if (api != null) {
+                                                        int coins = Main.getCoinsReward();
+                                                        if (coins > 0) {
+                                                            api.increaseBalance(player.player.getUniqueId(), coins);
+                                                            player.player.sendMessage(i18n("received_coins", true).replace("%amount%", Integer.toString(coins)));
+                                                        }
+                                                    }
+                                                }
 
                                                 if (madeRecord) {
                                                     statistic.addScore(Main.getConfigurator().config.getInt("statistics.scores.record", 100));
