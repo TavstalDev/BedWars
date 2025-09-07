@@ -307,7 +307,7 @@ public class PlayerListener implements Listener {
                                     Sounds.BLOCK_STONE_BUTTON_CLICK_ON, (float) Main.getConfigurator().config.getDouble("sounds.respawn_cooldown_wait.volume"), (float) Main.getConfigurator().config.getDouble("sounds.respawn_cooldown_wait.pitch"));
                         }
 
-                        livingTime--;
+                        livingTime -= 0.25;
                         if (livingTime <= 0) {
                             game.makePlayerFromSpectator(gamePlayer);
                             Sounds.playSound(player, player.getLocation(),
@@ -317,7 +317,7 @@ public class PlayerListener implements Listener {
                             this.cancel();
                         }
                     }
-                }.runTaskTimer(Main.getInstance(), 20L, 20L);
+                }.runTaskTimer(Main.getInstance(), 5L, 5L);
             } else if (!victimTeam.getConnectedPlayers().contains(victim) && Main.getConfigurator().config.getBoolean("kick-players-upon-final-death.enabled")) {
                 int delay = Main.getConfigurator().config.getInt("kick-players-upon-final-death.delay", 0);
 
@@ -733,14 +733,8 @@ public class PlayerListener implements Listener {
                 if (gPlayer.isSpectator) {
                     event.setCancelled(true);
                 }
+
                 if (game.isProtectionActive(player) && event.getCause() != DamageCause.VOID) {
-                    if (event instanceof EntityDamageByEntityEvent) {
-                        EntityDamageByEntityEvent edbee = (EntityDamageByEntityEvent) event;
-                        if (edbee.getDamager() instanceof Player) {
-                            Player damager = (Player) edbee.getDamager();
-                            MiscUtils.sendActionBarMessage(damager, i18nonly("player_protected").replace("%player%", gPlayer.player.getName()));
-                        }
-                    }
                     event.setCancelled(true);
                     return;
                 }
