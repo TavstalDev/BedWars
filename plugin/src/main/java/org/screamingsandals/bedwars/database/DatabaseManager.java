@@ -136,7 +136,7 @@ public class DatabaseManager {
 
     public String getCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS `" + tablePrefix
-                + "stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(255) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
+                + "stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(36) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
     }
 
     public String getReadObjectSql() {
@@ -149,12 +149,12 @@ public class DatabaseManager {
     }
 
     public String getScoresSql() {
-        return "SELECT uuid, score, name FROM " + tablePrefix + "stats_players";
+        return "SELECT * FROM " + tablePrefix + "stats_players";
     }
 
     public String getSeasonalCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS `" + tablePrefix
-                + "seasonal_stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(255) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
+                + "seasonal_stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(36) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
     }
 
     public String getSeasonalReadObjectSql() {
@@ -171,12 +171,12 @@ public class DatabaseManager {
     }
 
     public String getSeasonalScoresSql() {
-        return "SELECT uuid, score, name FROM " + tablePrefix + "seasonal_stats_players";
+        return "SELECT * FROM " + tablePrefix + "seasonal_stats_players";
     }
 
     public String getDailyCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS `" + tablePrefix
-                + "daily_stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(255) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
+                + "daily_stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(36) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
     }
 
     public String getDailyReadObjectSql() {
@@ -189,7 +189,7 @@ public class DatabaseManager {
     }
 
     public String getDailyScoresSql() {
-        return "SELECT uuid, score, name FROM " + tablePrefix + "daily_stats_players";
+        return "SELECT * FROM " + tablePrefix + "daily_stats_players";
     }
 
     public String getDailyResetSql() {

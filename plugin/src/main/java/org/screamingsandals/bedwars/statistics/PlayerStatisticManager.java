@@ -115,31 +115,44 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
 
         try {
             Main.getDatabaseManager().initialize();
-
             try (Connection connection = Main.getDatabaseManager().getConnection()) {
                 connection.setAutoCommit(false);
+
                 // Create all-time stats
-                PreparedStatement preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getCreateTableSql());
-                preparedStatement.executeUpdate();
+                try (PreparedStatement preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getCreateTableSql())) {
+                    preparedStatement.executeUpdate();
+                } catch (Exception ex) {
+                    Main.getInstance().getLogger().severe("Couldn't create all-time statistics table.");
+                    Main.getInstance().getLogger().severe(ex.getMessage());
+                }
 
-                // create seasonal stats
-                preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getSeasonalCreateTableSql());
-                preparedStatement.executeUpdate();
+                // Create seasonal stats
+                try (PreparedStatement preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getSeasonalCreateTableSql())) {
+                    preparedStatement.executeUpdate();
+                } catch (Exception ex) {
+                    Main.getInstance().getLogger().severe("Couldn't create seasonal statistics table.");
+                    Main.getInstance().getLogger().severe(ex.getMessage());
+                }
 
-                // create daily stats
-                preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getDailyCreateTableSql());
-                preparedStatement.executeUpdate();
+                // Create daily stats
+                try (PreparedStatement preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getDailyCreateTableSql())) {
+                    preparedStatement.executeUpdate();
+                } catch (Exception ex) {
+                    Main.getInstance().getLogger().severe("Couldn't create daily statistics table.");
+                    Main.getInstance().getLogger().severe(ex.getMessage());
+                }
 
                 connection.commit();
-                preparedStatement.close();
             } catch (Exception ex) {
-                ex.printStackTrace();
+                Main.getInstance().getLogger().severe("Couldn't create statistics tables.");
+                Main.getInstance().getLogger().severe(ex.getMessage());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().severe("Couldn't initialize database connection.");
+            Main.getInstance().getLogger().severe(e.getMessage());
         }
 
     }
@@ -154,66 +167,81 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 connection.setAutoCommit(false);
 
                 // Load all-time stats
-                PreparedStatement preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-                ResultSet resultSet = preparedStatement.executeQuery();
-                if (resultSet.first()) {
-                    do {
-                        UUID uuid = UUID.fromString(resultSet.getString("uuid"));
-                        PlayerStatistic statistic = new PlayerStatistic(uuid);
-                        statistic.addKills(resultSet.getInt("kills"));
-                        statistic.addDeaths(resultSet.getInt("deaths"));
-                        statistic.addWins(resultSet.getInt("wins"));
-                        statistic.addLoses(resultSet.getInt("loses"));
-                        statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
-                        statistic.addScore(resultSet.getInt("score"));
-                        statistic.setName(resultSet.getString("name"));
-                        allScores.put(uuid, statistic);
-                    } while (resultSet.next());
+                try (PreparedStatement preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+
+                    ResultSet resultSet = preparedStatement.executeQuery();
+                    if (resultSet.first()) {
+                        do {
+                            UUID uuid = UUID.fromString(resultSet.getString("uuid"));
+                            PlayerStatistic statistic = new PlayerStatistic(uuid);
+                            statistic.addKills(resultSet.getInt("kills"));
+                            statistic.addDeaths(resultSet.getInt("deaths"));
+                            statistic.addWins(resultSet.getInt("wins"));
+                            statistic.addLoses(resultSet.getInt("loses"));
+                            statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
+                            statistic.addScore(resultSet.getInt("score"));
+                            statistic.setName(resultSet.getString("name"));
+                            allScores.put(uuid, statistic);
+                        } while (resultSet.next());
+                    }
+                } catch (Exception ex) {
+                    Main.getInstance().getLogger().severe("Couldn't load all-time statistics table.");
+                    Main.getInstance().getLogger().severe(ex.getMessage());
                 }
 
-                // Load seasonal stats
-                preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getSeasonalScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-                resultSet = preparedStatement.executeQuery();
-                if (resultSet.first()) {
-                    do {
-                        UUID uuid = UUID.fromString(resultSet.getString("uuid"));
-                        PlayerStatistic statistic = new PlayerStatistic(uuid);
-                        statistic.addKills(resultSet.getInt("kills"));
-                        statistic.addDeaths(resultSet.getInt("deaths"));
-                        statistic.addWins(resultSet.getInt("wins"));
-                        statistic.addLoses(resultSet.getInt("loses"));
-                        statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
-                        statistic.addScore(resultSet.getInt("score"));
-                        statistic.setName(resultSet.getString("name"));
-                        seasonalScores.put(uuid, statistic);
-                    } while (resultSet.next());
+                // Seasonal stats
+                try (PreparedStatement preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getSeasonalScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+
+                    ResultSet resultSet = preparedStatement.executeQuery();
+                    if (resultSet.first()) {
+                        do {
+                            UUID uuid = UUID.fromString(resultSet.getString("uuid"));
+                            PlayerStatistic statistic = new PlayerStatistic(uuid);
+                            statistic.addKills(resultSet.getInt("kills"));
+                            statistic.addDeaths(resultSet.getInt("deaths"));
+                            statistic.addWins(resultSet.getInt("wins"));
+                            statistic.addLoses(resultSet.getInt("loses"));
+                            statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
+                            statistic.addScore(resultSet.getInt("score"));
+                            statistic.setName(resultSet.getString("name"));
+                            seasonalScores.put(uuid, statistic);
+                        } while (resultSet.next());
+                    }
+                } catch (Exception ex) {
+                    Main.getInstance().getLogger().severe("Couldn't load seasonal statistics table.");
+                    Main.getInstance().getLogger().severe(ex.getMessage());
                 }
 
-                // Load daily stats
-                preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getDailyScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-                resultSet = preparedStatement.executeQuery();
-                if (resultSet.first()) {
-                    do {
-                        UUID uuid = UUID.fromString(resultSet.getString("uuid"));
-                        PlayerStatistic statistic = new PlayerStatistic(uuid);
-                        statistic.addKills(resultSet.getInt("kills"));
-                        statistic.addDeaths(resultSet.getInt("deaths"));
-                        statistic.addWins(resultSet.getInt("wins"));
-                        statistic.addLoses(resultSet.getInt("loses"));
-                        statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
-                        statistic.addScore(resultSet.getInt("score"));
-                        statistic.setName(resultSet.getString("name"));
-                        dailyScores.put(uuid, statistic);
-                    } while (resultSet.next());
+                // Daily stats
+                try (PreparedStatement preparedStatement = connection
+                        .prepareStatement(Main.getDatabaseManager().getDailyScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+
+                    ResultSet resultSet = preparedStatement.executeQuery();
+                    if (resultSet.first()) {
+                        do {
+                            UUID uuid = UUID.fromString(resultSet.getString("uuid"));
+                            PlayerStatistic statistic = new PlayerStatistic(uuid);
+                            statistic.addKills(resultSet.getInt("kills"));
+                            statistic.addDeaths(resultSet.getInt("deaths"));
+                            statistic.addWins(resultSet.getInt("wins"));
+                            statistic.addLoses(resultSet.getInt("loses"));
+                            statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
+                            statistic.addScore(resultSet.getInt("score"));
+                            statistic.setName(resultSet.getString("name"));
+                            dailyScores.put(uuid, statistic);
+                        } while (resultSet.next());
+                    }
+                } catch (Exception ex) {
+                    Main.getInstance().getLogger().severe("Couldn't load daily statistics table.");
+                    Main.getInstance().getLogger().severe(ex.getMessage());
                 }
 
                 connection.commit();
-                preparedStatement.close();
             } catch (Exception ex) {
-                ex.printStackTrace();
+                Main.getInstance().getLogger().severe("Couldn't load statistics from the database.");
+                Main.getInstance().getLogger().severe(ex.getMessage());
             }
         } else {
             if (!fileDatabase.isSet("data") || !fileDatabase.isConfigurationSection("data")) {
@@ -417,61 +445,73 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             connection.setAutoCommit(false);
 
             // All-time stats
-            PreparedStatement preparedStatement = connection
-                    .prepareStatement(Main.getDatabaseManager().getWriteObjectSql());
-
-            if (allTimeStatistics != null) {
-                preparedStatement.setString(1, allTimeStatistics.getId().toString());
-                preparedStatement.setString(2, allTimeStatistics.getName());
-                preparedStatement.setInt(3, allTimeStatistics.getDeaths());
-                preparedStatement.setInt(4, allTimeStatistics.getDestroyedBeds());
-                preparedStatement.setInt(5, allTimeStatistics.getKills());
-                preparedStatement.setInt(6, allTimeStatistics.getLoses());
-                preparedStatement.setInt(7, allTimeStatistics.getScore());
-                preparedStatement.setInt(8, allTimeStatistics.getWins());
-                preparedStatement.executeUpdate();
+            try (PreparedStatement preparedStatement = connection
+                    .prepareStatement(Main.getDatabaseManager().getWriteObjectSql())) {
+                if (allTimeStatistics != null) {
+                    preparedStatement.setString(1, allTimeStatistics.getId().toString());
+                    preparedStatement.setString(2, allTimeStatistics.getName());
+                    preparedStatement.setInt(3, allTimeStatistics.getDeaths());
+                    preparedStatement.setInt(4, allTimeStatistics.getDestroyedBeds());
+                    preparedStatement.setInt(5, allTimeStatistics.getKills());
+                    preparedStatement.setInt(6, allTimeStatistics.getLoses());
+                    preparedStatement.setInt(7, allTimeStatistics.getScore());
+                    preparedStatement.setInt(8, allTimeStatistics.getWins());
+                    preparedStatement.executeUpdate();
+                } else
+                    Main.getInstance().getLogger().warning("Tried to store null all-time statistics!");
             }
-            else
-                Main.getInstance().getLogger().warning("Tried to store null all-time statistics!");
+            catch (Exception ex) {
+                Main.getInstance().getLogger().warning("Couldn't store all-time statistic data");
+                Main.getInstance().getLogger().severe(ex.getMessage());
+            }
 
             // Seasonal stats
-            if (seasonalStatistics != null) {
-                preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getSeasonalWriteObjectSql());
-
-                preparedStatement.setString(1, seasonalStatistics.getId().toString());
-                preparedStatement.setString(2, seasonalStatistics.getName());
-                preparedStatement.setInt(3, seasonalStatistics.getDeaths());
-                preparedStatement.setInt(4, seasonalStatistics.getDestroyedBeds());
-                preparedStatement.setInt(5, seasonalStatistics.getKills());
-                preparedStatement.setInt(6, seasonalStatistics.getLoses());
-                preparedStatement.setInt(7, seasonalStatistics.getScore());
-                preparedStatement.setInt(8, seasonalStatistics.getWins());
-                preparedStatement.executeUpdate();
+            try (PreparedStatement preparedStatement = connection
+                    .prepareStatement(Main.getDatabaseManager().getSeasonalWriteObjectSql()))
+            {
+                if (seasonalStatistics != null) {
+                    preparedStatement.setString(1, seasonalStatistics.getId().toString());
+                    preparedStatement.setString(2, seasonalStatistics.getName());
+                    preparedStatement.setInt(3, seasonalStatistics.getDeaths());
+                    preparedStatement.setInt(4, seasonalStatistics.getDestroyedBeds());
+                    preparedStatement.setInt(5, seasonalStatistics.getKills());
+                    preparedStatement.setInt(6, seasonalStatistics.getLoses());
+                    preparedStatement.setInt(7, seasonalStatistics.getScore());
+                    preparedStatement.setInt(8, seasonalStatistics.getWins());
+                    preparedStatement.executeUpdate();
+                }
+                else
+                    Main.getInstance().getLogger().warning("Tried to store null seasonal statistics!");
             }
-            else
-                Main.getInstance().getLogger().warning("Tried to store null seasonal statistics!");
+            catch (Exception ex) {
+                Main.getInstance().getLogger().warning("Couldn't store seasonal statistic data");
+                Main.getInstance().getLogger().severe(ex.getMessage());
+            }
 
             // Daily stats
-            if (dailyStatistics != null) {
-                preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getDailyWriteObjectSql());
-
-                preparedStatement.setString(1, dailyStatistics.getId().toString());
-                preparedStatement.setString(2, dailyStatistics.getName());
-                preparedStatement.setInt(3, dailyStatistics.getDeaths());
-                preparedStatement.setInt(4, dailyStatistics.getDestroyedBeds());
-                preparedStatement.setInt(5, dailyStatistics.getKills());
-                preparedStatement.setInt(6, dailyStatistics.getLoses());
-                preparedStatement.setInt(7, dailyStatistics.getScore());
-                preparedStatement.setInt(8, dailyStatistics.getWins());
-                preparedStatement.executeUpdate();
+            try (PreparedStatement preparedStatement = connection
+                    .prepareStatement(Main.getDatabaseManager().getDailyWriteObjectSql()))
+            {
+                if (dailyStatistics != null) {
+                    preparedStatement.setString(1, dailyStatistics.getId().toString());
+                    preparedStatement.setString(2, dailyStatistics.getName());
+                    preparedStatement.setInt(3, dailyStatistics.getDeaths());
+                    preparedStatement.setInt(4, dailyStatistics.getDestroyedBeds());
+                    preparedStatement.setInt(5, dailyStatistics.getKills());
+                    preparedStatement.setInt(6, dailyStatistics.getLoses());
+                    preparedStatement.setInt(7, dailyStatistics.getScore());
+                    preparedStatement.setInt(8, dailyStatistics.getWins());
+                    preparedStatement.executeUpdate();
+                }
+                else
+                    Main.getInstance().getLogger().warning("Tried to store null daily statistics!");
             }
-            else
-                Main.getInstance().getLogger().warning("Tried to store null daily statistics!");
+            catch (Exception ex) {
+                Main.getInstance().getLogger().warning("Couldn't store daily statistic data");
+                Main.getInstance().getLogger().severe(ex.getMessage());
+            }
 
             connection.commit();
-            preparedStatement.close();
         } catch (SQLException e) {
             Main.getInstance().getLogger().warning("Couldn't store statistic data for player.");
             Main.getInstance().getLogger().severe(e.getMessage());
