@@ -659,6 +659,5 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 e.printStackTrace();
             }
         }
-
     }
 }

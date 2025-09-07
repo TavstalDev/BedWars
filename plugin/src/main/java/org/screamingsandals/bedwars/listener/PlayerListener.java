@@ -85,7 +85,7 @@ public class PlayerListener implements Listener {
             Game game = gVictim.getGame();
             CurrentTeam victimTeam = game.getPlayerTeam(gVictim);
             List<ItemStack> drops = new ArrayList<>(event.getDrops());
-            int respawnTime = Main.getConfigurator().config.getInt("respawn-cooldown.time", 5);
+            double respawnTime = Main.getConfigurator().config.getDouble("respawn-cooldown.time", 5.0);
 
             event.setKeepInventory(game.getOriginalOrInheritedKeepInventory());
             event.setDroppedExp(0);
@@ -288,7 +288,7 @@ public class PlayerListener implements Listener {
                 game.makeSpectator(gVictim, false);
 
                 new BukkitRunnable() {
-                    int livingTime = respawnTime;
+                    double livingTime = respawnTime;
                     GamePlayer gamePlayer = gVictim;
                     Player player = gamePlayer.player;
 
@@ -308,7 +308,7 @@ public class PlayerListener implements Listener {
                         }
 
                         livingTime--;
-                        if (livingTime == 0) {
+                        if (livingTime <= 0) {
                             game.makePlayerFromSpectator(gamePlayer);
                             Sounds.playSound(player, player.getLocation(),
                                     Main.getConfigurator().config.getString("sounds.respawn_cooldown_done.sound"),
@@ -734,6 +734,13 @@ public class PlayerListener implements Listener {
                     event.setCancelled(true);
                 }
                 if (game.isProtectionActive(player) && event.getCause() != DamageCause.VOID) {
+                    if (event instanceof EntityDamageByEntityEvent) {
+                        EntityDamageByEntityEvent edbee = (EntityDamageByEntityEvent) event;
+                        if (edbee.getDamager() instanceof Player) {
+                            Player damager = (Player) edbee.getDamager();
+                            MiscUtils.sendActionBarMessage(damager, i18nonly("player_protected").replace("%player%", gPlayer.player.getName()));
+                        }
+                    }
                     event.setCancelled(true);
                     return;
                 }

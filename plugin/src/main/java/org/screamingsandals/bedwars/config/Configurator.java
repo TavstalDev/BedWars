@@ -164,7 +164,7 @@ public class Configurator {
         checkOrSetConfig(modify, "disable-server-message.player-leave", false);
         checkOrSetConfig(modify, "disable-flight", true);
         checkOrSetConfig(modify, "respawn-cooldown.enabled", true);
-        checkOrSetConfig(modify, "respawn-cooldown.time", 5);
+        checkOrSetConfig(modify, "respawn-cooldown.time", 5.0);
         checkOrSetConfig(modify, "stop-team-spawners-on-die", false);
         checkOrSetConfig(modify, "allow-fake-death", false);
         checkOrSetConfig(modify, "prefer-1-19-4-display-entities", true);
