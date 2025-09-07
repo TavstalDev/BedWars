@@ -235,7 +235,8 @@ public class Configurator {
         checkOrSetConfig(modify, "shop.inventory-type", "CHEST");
         checkOrSetConfig(modify, "shop.allow-execution-of-console-commands", true);
         checkOrSetConfig(modify, "shop.citizens-enabled", false);
-        
+
+        checkOrSetConfig(modify, "items.delay", 1);
         checkOrSetConfig(modify, "items.jointeam", "COMPASS");
         checkOrSetConfig(modify, "items.leavegame", "SLIME_BALL");
         checkOrSetConfig(modify, "items.startgame", "DIAMOND");
