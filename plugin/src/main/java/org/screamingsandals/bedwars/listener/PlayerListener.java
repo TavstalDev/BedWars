@@ -831,10 +831,18 @@ public class PlayerListener implements Listener {
         GamePlayer gPlayer = Main.getPlayerGameProfile(player);
         Game game = gPlayer.getGame();
 
-        if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null && event.getClickedBlock().getType() == Material.CHEST && game.getStatus() == GameStatus.WAITING) {
-            event.setCancelled(true);
+        if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null) {
+            if (event.getClickedBlock().getType() == Material.CHEST && game.getStatus() == GameStatus.WAITING) {
+                event.setCancelled(true);
+            }
+            else if (event.getClickedBlock().getType() == Material.CAMPFIRE || event.getClickedBlock().getType() == Material.SOUL_CAMPFIRE
+            || event.getClickedBlock().getType() == Material.FLOWER_POT || event.getClickedBlock().getType() == Material.ITEM_FRAME)
+            {
+                event.setCancelled(true);
+            }
             return;
         }
+
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             if (game.getStatus() == GameStatus.WAITING || gPlayer.isSpectator) {
@@ -1077,7 +1085,19 @@ public class PlayerListener implements Listener {
                         || event.getInventory().getType() == InventoryType.ANVIL
                         || event.getInventory().getType() == InventoryType.BREWING
                         || event.getInventory().getType() == InventoryType.FURNACE
-                        || event.getInventory().getType() == InventoryType.WORKBENCH) {
+                        || event.getInventory().getType() == InventoryType.WORKBENCH
+                        || event.getInventory().getType() == InventoryType.SMITHING
+                        || event.getInventory().getType() == InventoryType.GRINDSTONE
+                        || event.getInventory().getType() == InventoryType.LOOM
+                        || event.getInventory().getType() == InventoryType.STONECUTTER
+                        || event.getInventory().getType() == InventoryType.CARTOGRAPHY
+                        || event.getInventory().getType() == InventoryType.BEACON
+                        || event.getInventory().getType() == InventoryType.SMOKER
+                        || event.getInventory().getType() == InventoryType.BLAST_FURNACE
+                        || event.getInventory().getType() == InventoryType.DISPENSER
+                        || event.getInventory().getType() == InventoryType.DROPPER
+                        || event.getInventory().getType() == InventoryType.HOPPER
+                        || event.getInventory().getType() == InventoryType.BARREL){
                     if (!gProfile.getGame().getOriginalOrInheritedCrafting()) {
                         event.setCancelled(true);
                     }

@@ -88,6 +88,34 @@ public class WorldListener implements Listener {
         onBlockChange(event.getBlock(), event);
     }
 
+    @EventHandler
+    public void onSignChange(SignChangeEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
+
+        // Prevent sign change
+        Block block = event.getBlock();
+        for (String s : Main.getGameNames()) {
+            Game game = Main.getGame(s);
+            if (game.getStatus() != GameStatus.DISABLED) {
+                if (GameCreator.isInArea(block.getLocation(), game.getPos1(), game.getPos2())) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onCauldronLevelChange(CauldronLevelChangeEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
+
+        onBlockChange(event.getBlock(), event);
+    }
+
     public void onBlockChange(Block block, Cancellable cancellable) {
         for (String s : Main.getGameNames()) {
             Game game = Main.getGame(s);

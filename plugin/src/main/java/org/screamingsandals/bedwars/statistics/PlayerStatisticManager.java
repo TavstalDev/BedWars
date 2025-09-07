@@ -496,34 +496,46 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
 
     private synchronized void storeYamlStatistic(PlayerStatistic allTimeStatistics, PlayerStatistic seasonalStatistics, PlayerStatistic dailyStatistics) {
         // Store all-time stats
-        this.fileDatabase.set("data." + allTimeStatistics.getId().toString(), null);
-        this.fileDatabase.createSection("data." + allTimeStatistics.getId().toString(), allTimeStatistics.serialize());
-        try {
-            this.fileDatabase.save(this.databaseFile);
-        } catch (Exception ex) {
-            Main.getInstance().getLogger().warning("Couldn't store statistic data for player with uuid: " + allTimeStatistics.getId().toString());
-            Main.getInstance().getLogger().severe(ex.getMessage());
+        if (allTimeStatistics != null) {
+            this.fileDatabase.set("data." + allTimeStatistics.getId().toString(), null);
+            this.fileDatabase.createSection("data." + allTimeStatistics.getId().toString(), allTimeStatistics.serialize());
+            try {
+                this.fileDatabase.save(this.databaseFile);
+            } catch (Exception ex) {
+                Main.getInstance().getLogger().warning("Couldn't store statistic data for player with uuid: " + allTimeStatistics.getId().toString());
+                Main.getInstance().getLogger().severe(ex.getMessage());
+            }
         }
+        else
+            Main.getInstance().getLogger().warning("Tried to store null all-time statistics!");
 
         // Store seasonal stats
-        this.seasonalFileDatabase.set("data." + seasonalStatistics.getId().toString(), null);
-        this.seasonalFileDatabase.createSection("data." + seasonalStatistics.getId().toString(), seasonalStatistics.serialize());
-        try {
-            this.seasonalFileDatabase.save(this.seasonalDatabaseFile);
-        } catch (Exception ex) {
-            Main.getInstance().getLogger().warning("Couldn't store seasonal statistic data for player with uuid: " + seasonalStatistics.getId().toString());
-            Main.getInstance().getLogger().severe(ex.getMessage());
+        if (seasonalStatistics != null) {
+            this.seasonalFileDatabase.set("data." + seasonalStatistics.getId().toString(), null);
+            this.seasonalFileDatabase.createSection("data." + seasonalStatistics.getId().toString(), seasonalStatistics.serialize());
+            try {
+                this.seasonalFileDatabase.save(this.seasonalDatabaseFile);
+            } catch (Exception ex) {
+                Main.getInstance().getLogger().warning("Couldn't store seasonal statistic data for player with uuid: " + seasonalStatistics.getId().toString());
+                Main.getInstance().getLogger().severe(ex.getMessage());
+            }
         }
+        else
+            Main.getInstance().getLogger().warning("Tried to store null seasonal statistics!");
 
         // Store daily stats
-        this.dailyFileDatabase.set("data." + dailyStatistics.getId().toString(), null);
-        this.dailyFileDatabase.createSection("data." + dailyStatistics.getId().toString(), dailyStatistics.serialize());
-        try {
-            this.dailyFileDatabase.save(this.dailyDatabaseFile);
-        } catch (Exception ex) {
-            Main.getInstance().getLogger().warning("Couldn't store daily statistic data for player with uuid: " + dailyStatistics.getId().toString());
-            Main.getInstance().getLogger().severe(ex.getMessage());
+        if (dailyStatistics != null) {
+            this.dailyFileDatabase.set("data." + dailyStatistics.getId().toString(), null);
+            this.dailyFileDatabase.createSection("data." + dailyStatistics.getId().toString(), dailyStatistics.serialize());
+            try {
+                this.dailyFileDatabase.save(this.dailyDatabaseFile);
+            } catch (Exception ex) {
+                Main.getInstance().getLogger().warning("Couldn't store daily statistic data for player with uuid: " + dailyStatistics.getId().toString());
+                Main.getInstance().getLogger().severe(ex.getMessage());
+            }
         }
+        else
+            Main.getInstance().getLogger().warning("Tried to store null daily statistics!");
     }
 
     public void unloadStatistic(OfflinePlayer player) {
