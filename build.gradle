@@ -31,7 +31,7 @@ subprojects {
     }
 
     dependencies {
-        compileOnly paperLegacy("1.16.5")
+        compileOnly 'io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT'
     }
 
     enableShadowPlugin()
@@ -49,9 +49,9 @@ subprojects {
         }
     }
 
-    sourceCompatibility = '1.8'
+    sourceCompatibility = '17'
     compileJava {
         options.compilerArgs.add("-Xlint:-options")
-        options.release = 8
+        options.release = 17
     }
 }

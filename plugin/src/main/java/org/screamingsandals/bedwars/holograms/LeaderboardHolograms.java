@@ -19,31 +19,31 @@
 
 package org.screamingsandals.bedwars.holograms;
 
+import com.maximde.hologramlib.hologram.RenderMode;
+import com.maximde.hologramlib.hologram.TextHologram;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.screamingsandals.bedwars.Main;
 import org.screamingsandals.bedwars.api.statistics.ELeaderboardKind;
 import org.screamingsandals.bedwars.api.statistics.ELeaderboardStatType;
 import org.screamingsandals.bedwars.api.statistics.LeaderboardEntry;
-import org.screamingsandals.bedwars.commands.BaseCommand;
-import org.screamingsandals.bedwars.lib.nms.holograms.Hologram;
-import org.screamingsandals.bedwars.lib.nms.holograms.TouchHandler;
+import org.screamingsandals.bedwars.utils.HoloUtils;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
-import static org.screamingsandals.bedwars.lib.lang.I.i18n;
 import static org.screamingsandals.bedwars.lib.lang.I.i18nonly;
 
-public class LeaderboardHolograms implements TouchHandler {
+public class LeaderboardHolograms {
     private ArrayList<HologramLocation> hologramLocations;
-    private Map<HologramLocation, Hologram> holograms;
+    private Map<HologramLocation, TextHologram> holograms;
     private Map<ELeaderboardKind, Map<ELeaderboardStatType, List<LeaderboardEntry>>> entries;
 
     public void addHologramLocation(Location eyeLocation, ELeaderboardStatType type, ELeaderboardKind kind) {
@@ -192,33 +192,34 @@ public class LeaderboardHolograms implements TouchHandler {
 
     public void unloadHolograms() {
         if (Main.isHologramsEnabled()) {
-            for (Hologram holo : holograms.values()) {
-                holo.destroy();
+            for (TextHologram holo : holograms.values()) {
+                Main.getHologramLibManager().remove(holo.getId());
             }
             holograms.clear();
         }
     }
 
-    public void addViewer(Player player) {
+    /*public void addViewer(Player player) {
         holograms.values().forEach(hologram -> {
             if (!hologram.getViewers().contains(player)) {
                 Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> hologram.addViewer(player), 10L);
             }
         });
-    }
+    }*/
 
     private void updateHolograms() {
         hologramLocations.forEach(location -> {
             if (!holograms.containsKey(location)) {
-                holograms.put(location, Main.getHologramManager().spawnHologramTouchable(location));
-                holograms.get(location).addHandler(this);
+                TextHologram hologram = HoloUtils.createHologram(location, RenderMode.ALL);
+                holograms.put(location, hologram);
+                //holograms.get(location).addHandler(this);
             }
             updateHologram(location.leaderboardType, location.leaderboardKind, holograms.get(location));
         });
-        Bukkit.getOnlinePlayers().forEach(this::addViewer);
+        //Bukkit.getOnlinePlayers().forEach(this::addViewer);
     }
 
-    private void updateHologram(final ELeaderboardStatType type, final ELeaderboardKind kind, final Hologram holo) {
+    private void updateHologram(final ELeaderboardStatType type, final ELeaderboardKind kind, final TextHologram holo) {
         List<String> lines = new ArrayList<>();
 
         lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headTopWrapper")));
@@ -267,29 +268,7 @@ public class LeaderboardHolograms implements TouchHandler {
             });
         }
 
-        for (int i = 0; i < lines.size(); i++) {
-            holo.setLine(i, lines.get(i));
-        }
-    }
-
-    @Override
-    public void handle(Player player, Hologram hologram) {
-        if (!player.hasMetadata("bw-remove-holo") || (!player.isOp() && !BaseCommand.hasPermission(player, BaseCommand.ADMIN_PERMISSION, false))) {
-            return;
-        }
-
-        player.removeMetadata("bw-remove-holo", Main.getInstance());
-        Main.getInstance().getServer().getScheduler().runTask(Main.getInstance(), () -> {
-            hologram.destroy();
-            new ArrayList<>(hologramLocations).forEach((location) -> {
-                if (hologram.getLocation().getX() == location.getX() && hologram.getLocation().getY() == location.getY()
-                        && hologram.getLocation().getZ() == location.getZ()) {
-                    hologramLocations.remove(location);
-                    holograms.remove(location);
-                    updateHologramDatabase();
-                }
-            });
-            player.sendMessage(i18n("holo_removed"));
-        });
+        holo.setText(String.join("\n", lines));
+        holo.update();
     }
 }

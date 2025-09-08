@@ -19,6 +19,7 @@
 
 package org.screamingsandals.bedwars.game;
 
+import com.maximde.hologramlib.hologram.TextHologram;
 import lombok.Data;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -29,7 +30,6 @@ import org.bukkit.inventory.Inventory;
 import org.screamingsandals.bedwars.api.RunningTeam;
 import org.screamingsandals.bedwars.api.TeamColor;
 import org.screamingsandals.bedwars.api.game.Game;
-import org.screamingsandals.bedwars.lib.nms.holograms.Hologram;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +45,8 @@ public class CurrentTeam implements RunningTeam {
     private Inventory chestInventory;
     private List<Block> chests = new ArrayList<>();
     private Game game;
-    private Hologram holo;
-    private Hologram protectHolo;
+    private TextHologram holo;
+    private TextHologram protectHolo;
 
     public boolean isBed = true;
     public boolean forced = false;
@@ -73,11 +73,11 @@ public class CurrentTeam implements RunningTeam {
         this.scoreboardTeam = scoreboardTeam;
     }
 
-    public void setBedHolo(Hologram holo) {
+    public void setBedHolo(TextHologram holo) {
         this.holo = holo;
     }
 
-    public Hologram getBedHolo() {
+    public TextHologram getBedHolo() {
         return this.holo;
     }
 
@@ -85,11 +85,11 @@ public class CurrentTeam implements RunningTeam {
         return this.holo != null;
     }
 
-    public void setProtectHolo(Hologram protectHolo) {
+    public void setProtectHolo(TextHologram protectHolo) {
         this.protectHolo = protectHolo;
     }
 
-    public Hologram getProtectHolo() {
+    public TextHologram getProtectHolo() {
         return this.protectHolo;
     }
 

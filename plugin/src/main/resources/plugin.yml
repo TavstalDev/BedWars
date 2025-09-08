@@ -39,6 +39,7 @@ softdepend:
   - Parties
   - ViaVersion
   - BanyaszLib
+  - HologramLib
 commands:
   bw:
     description: Command of BW plugin

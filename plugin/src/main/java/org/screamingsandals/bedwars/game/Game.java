@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.maximde.hologramlib.hologram.RenderMode;
+import com.maximde.hologramlib.hologram.TextHologram;
 import io.github.tavstaldev.banyaszLib.api.BanyaszApi;
 import lombok.Getter;
 import org.bukkit.*;
@@ -79,11 +81,9 @@ import org.screamingsandals.bedwars.listener.Player116ListenerUtils;
 import org.screamingsandals.bedwars.region.FlatteningRegion;
 import org.screamingsandals.bedwars.region.LegacyRegion;
 import org.screamingsandals.bedwars.statistics.PlayerStatistic;
-import org.screamingsandals.bedwars.statistics.PlayerStatisticManager;
 import org.screamingsandals.bedwars.utils.*;
 import org.screamingsandals.bedwars.lib.debug.Debug;
 import org.screamingsandals.bedwars.lib.nms.entity.EntityUtils;
-import org.screamingsandals.bedwars.lib.nms.holograms.Hologram;
 import org.screamingsandals.bedwars.lib.signmanager.SignBlock;
 import org.screamingsandals.simpleinventories.utils.MaterialSearchEngine;
 import org.screamingsandals.simpleinventories.utils.StackParser;
@@ -232,8 +232,8 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
     private Map<Location, ItemStack[]> usedChests = new HashMap<>();
     private List<SpecialItem> activeSpecialItems = new ArrayList<>();
     private List<DelayFactory> activeDelays = new ArrayList<>();
-    private List<Hologram> createdHolograms = new ArrayList<>();
-    private Map<ItemSpawner, Hologram> countdownHolograms = new HashMap<>();
+    private List<TextHologram> createdHolograms = new ArrayList<>();
+    private Map<ItemSpawner, TextHologram> countdownHolograms = new HashMap<>();
     private Map<GamePlayer, Inventory> fakeEnderChests = new HashMap<>();
     private int postGameWaiting = 3;
     private boolean preparing = false;
@@ -677,13 +677,13 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                     }
 
                     if (team.hasBedHolo()) {
-                        team.getBedHolo().setLine(0,
-                                i18nonly(isItDoor ? "protect_your_door_destroyed" : (isItBedBlock ? "protect_your_bed_destroyed" : (isItAnchor ? "protect_your_anchor_destroyed" : (isItCake ? "protect_your_cake_destroyed" : "protect_your_target_destroyed")))));
-                        team.getBedHolo().addViewers(team.getConnectedPlayers());
+                        team.getBedHolo().setText( i18nonly(isItDoor ? "protect_your_door_destroyed" : (isItBedBlock ? "protect_your_bed_destroyed" : (isItAnchor ? "protect_your_anchor_destroyed" : (isItCake ? "protect_your_cake_destroyed" : "protect_your_target_destroyed")))));
+                        team.getBedHolo().update();
+                        team.getBedHolo().addAllViewers(team.getConnectedPlayers());
                     }
 
                     if (team.hasProtectHolo()) {
-                        team.getProtectHolo().destroy();
+                        Main.getHologramLibManager().remove(team.getProtectHolo().getId());
                     }
 
                     BedwarsTargetBlockDestroyedEvent targetBlockDestroyed = new BedwarsTargetBlockDestroyedEvent(this,
@@ -1996,14 +1996,14 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                             if (spawner.getHologramEnabled()) {
                                 Location loc = spawner.loc.clone().add(0,
                                         Main.getConfigurator().config.getDouble("spawner-holo-height", 0.25), 0);
-                                Hologram holo = Main.getHologramManager().spawnHologram(getConnectedPlayers(), loc,
-                                        spawner.type.getItemBoldName());
+                                TextHologram holo = HoloUtils.createHologram(loc, RenderMode.ALL);
                                 createdHolograms.add(holo);
                                 if (getOriginalOrInheritedSpawnerHologramsCountdown()) {
-                                    holo.addLine(spawner.type.getInterval() < 2 ? i18nonly("every_second_spawning")
+                                    holo.setText(spawner.type.getInterval() < 2 ? i18nonly("every_second_spawning")
                                             : i18nonly("countdown_spawning").replace("%seconds%",
                                             Integer.toString(spawner.type.getInterval())));
                                     countdownHolograms.put(spawner, holo);
+                                    holo.update();
                                 }
                             }
                         }
@@ -2124,14 +2124,20 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                             }
                             List<Player> enemies = getConnectedPlayers();
                             enemies.removeAll(team.getConnectedPlayers());
-                            Hologram holo = Main.getHologramManager().spawnHologram(enemies, loc,
-                                    i18nonly(isDoor ? "destroy_this_door" : (isBlockTypeBed ? "destroy_this_bed" : (isAnchor ? "destroy_this_anchor" : (isCake ? "destroy_this_cake" : "destroy_this_target"))))
-                                            .replace("%teamcolor%", team.teamInfo.color.chatColor.toString()));
+                            TextHologram holo = HoloUtils.createHologram(loc, RenderMode.VIEWER_LIST);
+                            holo.setText(i18nonly(isDoor ? "destroy_this_door" : (isBlockTypeBed ? "destroy_this_bed" : (isAnchor ? "destroy_this_anchor" : (isCake ? "destroy_this_cake" : "destroy_this_target"))))
+                                    .replace("%teamcolor%", team.teamInfo.color.chatColor.toString()));
+                            holo.update();
+                            holo.addAllViewers(enemies);
+
                             createdHolograms.add(holo);
                             team.setBedHolo(holo);
-                            Hologram protectHolo = Main.getHologramManager().spawnHologram(team.getConnectedPlayers(), loc,
-                                    i18nonly(isDoor ? "protect_your_door" : (isBlockTypeBed ? "protect_your_bed" : (isAnchor ? "protect_your_anchor" : (isCake ? "protect_your_cake" : "protect_your_target"))))
-                                            .replace("%teamcolor%", team.teamInfo.color.chatColor.toString()));
+
+                            TextHologram protectHolo = HoloUtils.createHologram(loc, RenderMode.VIEWER_LIST);
+                            holo.setText(i18nonly(isDoor ? "protect_your_door" : (isBlockTypeBed ? "protect_your_bed" : (isAnchor ? "protect_your_anchor" : (isCake ? "protect_your_cake" : "protect_your_target"))))
+                                    .replace("%teamcolor%", team.teamInfo.color.chatColor.toString()));
+                            holo.update();
+                            holo.addAllViewers(team.getConnectedPlayers());
                             createdHolograms.add(protectHolo);
                             team.setProtectHolo(protectHolo);
                         }
@@ -2353,10 +2359,12 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                     && !spawner.spawnerIsFullHologram) {
                                 if (cycle > 1) {
                                     int modulo = cycle - elapsedTime % cycle;
-                                    countdownHolograms.get(spawner).setLine(1,
+                                    countdownHolograms.get(spawner).setText(
                                             i18nonly("countdown_spawning").replace("%seconds%", Integer.toString(modulo)));
+                                    countdownHolograms.get(spawner).update();
                                 } else if (spawner.rerenderHologram) {
-                                    countdownHolograms.get(spawner).setLine(1, i18nonly("every_second_spawning"));
+                                    countdownHolograms.get(spawner).setText(i18nonly("every_second_spawning"));
+                                    countdownHolograms.get(spawner).update();
                                     spawner.rerenderHologram = false;
                                 }
                             }
@@ -2556,8 +2564,8 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
         }
 
         // Holograms destroy
-        for (Hologram holo : createdHolograms) {
-            holo.destroy();
+        for (TextHologram holo : createdHolograms) {
+            Main.getHologramLibManager().remove(holo.getId());
         }
         createdHolograms.clear();
         countdownHolograms.clear();

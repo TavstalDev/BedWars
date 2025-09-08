@@ -19,6 +19,7 @@
 
 package org.screamingsandals.bedwars;
 
+import com.maximde.hologramlib.HologramLib;
 import org.bstats.charts.SimplePie;
 import org.jetbrains.annotations.Nullable;
 import org.screamingsandals.bedwars.api.events.BedwarsOpenShopEvent;
@@ -64,7 +65,6 @@ import org.screamingsandals.bedwars.utils.BedWarsSignOwner;
 import org.screamingsandals.bedwars.utils.MiscUtils;
 import org.screamingsandals.bedwars.utils.UpdateChecker;
 import org.screamingsandals.bedwars.lib.debug.Debug;
-import org.screamingsandals.bedwars.lib.nms.holograms.HologramManager;
 import org.screamingsandals.bedwars.lib.nms.utils.ClassStorage;
 import org.screamingsandals.bedwars.lib.signmanager.SignListener;
 import org.screamingsandals.bedwars.lib.signmanager.SignManager;
@@ -105,7 +105,6 @@ public class Main extends JavaPlugin implements BedwarsAPI {
     private HashMap<String, BaseCommand> commands;
     private ColorChanger colorChanger;
     private SignManager signManager;
-    private HologramManager manager;
     private LeaderboardHolograms leaderboardHolograms;
     private TabManager tabManager;
     public static List<String> autoColoredMaterials = new ArrayList<>();
@@ -115,6 +114,7 @@ public class Main extends JavaPlugin implements BedwarsAPI {
     private final Random random = new Random();
     private boolean isBanyasz = false;
     private @Nullable BanyaszApi banyaszApi;
+    private com.maximde.hologramlib.hologram.HologramManager hologramManager;
 
     static {
         // ColorChanger list of materials
@@ -364,10 +364,6 @@ public class Main extends JavaPlugin implements BedwarsAPI {
         return instance.signManager;
     }
 
-    public static HologramManager getHologramManager() {
-        return instance.manager;
-    }
-
     public static LeaderboardHolograms getLeaderboardHolograms() {
         return instance.leaderboardHolograms;
     }
@@ -388,6 +384,15 @@ public class Main extends JavaPlugin implements BedwarsAPI {
         int min = instance.configurator.config.getInt("banyasz.minCoins", 10);
         int max = instance.configurator.config.getInt("banyasz.maxCoins", 20);
         return instance.random.nextInt(max - min + 1) + min;
+    }
+
+    public static com.maximde.hologramlib.hologram.HologramManager getHologramLibManager() {
+        return instance.hologramManager;
+    }
+
+    @Override
+    public void onLoad() {
+        HologramLib.onLoad(this);
     }
 
     public void onEnable() {
@@ -511,7 +516,12 @@ public class Main extends JavaPlugin implements BedwarsAPI {
 
         InventoryListener.init(this);
 
-        this.manager = new HologramManager(this);
+        if (HologramLib.getManager().isPresent()) {
+            hologramManager = HologramLib.getManager().get();
+        }
+        else {
+            getLogger().severe("Failed to initialize HologramLib manager.");
+        }
 
         SpecialRegister.onEnable(this);
 

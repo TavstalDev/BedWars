@@ -19,12 +19,8 @@
 
 package org.screamingsandals.bedwars.holograms;
 
-import static org.screamingsandals.bedwars.lib.lang.I.i18n;
-
-import java.io.File;
-import java.util.*;
-import java.util.Map.Entry;
-
+import com.maximde.hologramlib.hologram.RenderMode;
+import com.maximde.hologramlib.hologram.TextHologram;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -33,14 +29,17 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.screamingsandals.bedwars.Main;
 import org.screamingsandals.bedwars.api.statistics.PlayerStatistic;
-import org.screamingsandals.bedwars.commands.BaseCommand;
-import org.screamingsandals.bedwars.lib.nms.holograms.Hologram;
-import org.screamingsandals.bedwars.lib.nms.holograms.TouchHandler;
+import org.screamingsandals.bedwars.utils.HoloUtils;
 
-public class StatisticsHolograms implements TouchHandler {
+import java.io.File;
+import java.util.*;
+
+import static org.screamingsandals.bedwars.lib.lang.I.i18n;
+
+public class StatisticsHolograms {
 
     private ArrayList<Location> hologramLocations = null;
-    private Map<UUID, List<Hologram>> holograms = null;
+    private Map<UUID, List<TextHologram>> holograms = null;
 
 	public void addHologramLocation(Location eyeLocation) {
         this.hologramLocations.add(eyeLocation.subtract(0, 3, 0));
@@ -87,9 +86,9 @@ public class StatisticsHolograms implements TouchHandler {
 
 	public void unloadHolograms() {
         if (Main.isHologramsEnabled()) {
-        	for (List<Hologram> holos : holograms.values()) {
-        		for (Hologram holo : holos) {
-        			holo.destroy();
+        	for (List<TextHologram> holos : holograms.values()) {
+        		for (TextHologram holo : holos) {
+        			Main.getHologramLibManager().remove(holo.getId());
         		}
         	}
         }
@@ -108,9 +107,9 @@ public class StatisticsHolograms implements TouchHandler {
 	}
 
     public void cleanupPlayerLeave(OfflinePlayer player) {
-        final List<Hologram> holos = holograms.get(player.getUniqueId());
+        final List<TextHologram> holos = holograms.get(player.getUniqueId());
         if (holos != null) {
-            holos.forEach(holo -> holo.destroy());
+            holos.forEach(holo -> Main.getHologramLibManager().remove(holo.getId()));
             holos.clear();
             holograms.remove(player.getUniqueId());
         }
@@ -126,8 +125,8 @@ public class StatisticsHolograms implements TouchHandler {
         }
 	}
 
-    private Hologram getHologramByLocation(List<Hologram> holograms, Location holoLocation) {
-        for (Hologram holo : holograms) {
+    private TextHologram getHologramByLocation(List<TextHologram> holograms, Location holoLocation) {
+        for (TextHologram holo : holograms) {
             if (holo.getLocation().getX() == holoLocation.getX() && holo.getLocation().getY() == holoLocation.getY()
                     && holo.getLocation().getZ() == holoLocation.getZ()) {
                 return holo;
@@ -138,13 +137,13 @@ public class StatisticsHolograms implements TouchHandler {
     }
 	
 	public void updatePlayerHologram(Player player, Location holoLocation) {
-        List<Hologram> holograms;
+        List<TextHologram> holograms;
         if (!this.holograms.containsKey(player.getUniqueId())) {
             this.holograms.put(player.getUniqueId(), new ArrayList<>());
         }
 
         holograms = this.holograms.get(player.getUniqueId());
-        Hologram holo = this.getHologramByLocation(holograms, holoLocation);
+        TextHologram holo = this.getHologramByLocation(holograms, holoLocation);
         if (holo == null && player.getWorld() == holoLocation.getWorld()) {
             holograms.add(this.createPlayerStatisticHologram(player, holoLocation));
         } else if (holo != null) {
@@ -152,25 +151,13 @@ public class StatisticsHolograms implements TouchHandler {
                 this.updatePlayerStatisticHologram(player, holo);
             } else {
                 holograms.remove(holo);
-                holo.destroy();
+                Main.getHologramLibManager().remove(holo.getId());
             }
         }
 	}
 
-    private Hologram createPlayerStatisticHologram(Player player, Location holoLocation) {
-        final Hologram holo = Main.getHologramManager().spawnHologramTouchable(player, holoLocation);
-        holo.addHandler(this);
-
-        String headline =
-                ChatColor.translateAlternateColorCodes('&',
-                        Main.getConfigurator().config.getString("holograms.headline", "Your &eBEDWARS&f stats")
-                );
-        if (!headline.trim().isEmpty()) {
-            holo.addLine(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headTopWrapper", "")));
-            holo.addLine(headline);
-            holo.addLine(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headBottomWrapper", "")));
-        }
-
+    private TextHologram createPlayerStatisticHologram(Player player, Location holoLocation) {
+        final TextHologram holo = HoloUtils.createHologram(holoLocation, RenderMode.VIEWER_LIST);
         this.updatePlayerStatisticHologram(player, holo);
         return holo;
     }
@@ -203,7 +190,7 @@ public class StatisticsHolograms implements TouchHandler {
         return null;
     }
 
-	@Override
+	/*@Override
 	public void handle(Player player, Hologram holo) {
         if (!player.hasMetadata("bw-remove-holo") || (!player.isOp() && !BaseCommand.hasPermission(player, BaseCommand.ADMIN_PERMISSION, false))) {
             return;
@@ -231,12 +218,22 @@ public class StatisticsHolograms implements TouchHandler {
             }
             player.sendMessage(i18n("holo_removed"));
         });
-	}
+	}*/
 
-    private void updatePlayerStatisticHologram(Player player, final Hologram holo) {
+    private void updatePlayerStatisticHologram(Player player, final TextHologram holo) {
         PlayerStatistic statistic = Main.getPlayerStatisticsManager().getStatistic(player);
         
         List<String> lines = new ArrayList<>();
+
+        String headline =
+                ChatColor.translateAlternateColorCodes('&',
+                        Main.getConfigurator().config.getString("holograms.headline", "Your &eBEDWARS&f stats")
+                );
+        if (!headline.trim().isEmpty()) {
+            lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headTopWrapper", "")));
+            lines.add(headline);
+            lines.add(ChatColor.translateAlternateColorCodes('&', Main.getConfigurator().config.getString("holograms.leaderboard.headBottomWrapper", "")));
+        }
 
         lines.add(i18n("statistics_kills", false).replace("%kills%",
                 Integer.toString(statistic.getKills())));
@@ -255,11 +252,8 @@ public class StatisticsHolograms implements TouchHandler {
         lines.add(i18n("statistics_score", false).replace("%score%",
                 Integer.toString(statistic.getScore())));
 
-        int increment = Math.min(holo.length(), 3);
-
-        for (int i = 0; i < lines.size(); i++) {
-        	holo.setLine(i + increment, lines.get(i));
-        }
+        holo.setText(String.join("\n", lines));
+        holo.update();
 
         if (!holo.getViewers().contains(player)) {
             holo.addViewer(player);

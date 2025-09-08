@@ -59,8 +59,13 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         if (uuid == null) {
             return null;
         }
-
-        return allScores.get(uuid);
+        var local = allScores.get(uuid);
+        // Try prevent null pointer exceptions
+        if (local == null) {
+            addStatistic(uuid);
+            local = allScores.get(uuid);
+        }
+        return local;
     }
 
     public PlayerStatistic getSeasonalStatistic(OfflinePlayer player) {
@@ -74,8 +79,13 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         if (uuid == null) {
             return null;
         }
-
-        return seasonalScores.get(uuid);
+        var local =  seasonalScores.get(uuid);
+        // Try prevent null pointer exceptions
+        if (local == null) {
+            addSeasonalStatistic(uuid);
+            local =  seasonalScores.get(uuid);
+        }
+        return local;
     }
 
     public PlayerStatistic getDailyStatistic(OfflinePlayer player) {
@@ -89,8 +99,13 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         if (uuid == null) {
             return null;
         }
-
-        return dailyScores.get(uuid);
+        var local =  dailyScores.get(uuid);
+        // Try prevent null pointer exceptions
+        if (local == null) {
+            addDailyStatistic(uuid);
+            local = dailyScores.get(uuid);
+        }
+        return local;
     }
 
     public void initialize() {
@@ -585,7 +600,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
     }
 
     public void addStatistic(UUID playerId) {
-        if (getStatistic(playerId) != null) {
+        if (dailyScores.containsKey(playerId)) {
             return;
         }
 
@@ -603,7 +618,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
     }
 
     public void addSeasonalStatistic(UUID playerId) {
-        if (getSeasonalStatistic(playerId) != null) {
+        if (seasonalScores.containsKey(playerId)) {
             return;
         }
 
@@ -621,7 +636,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
     }
 
     public void addDailyStatistic(UUID playerId) {
-        if (getDailyStatistic(playerId) != null) {
+        if (dailyScores.containsKey(playerId)) {
             return;
         }
 
