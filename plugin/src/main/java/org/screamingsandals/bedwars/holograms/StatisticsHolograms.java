@@ -96,14 +96,14 @@ public class StatisticsHolograms {
 
 	public void updateHolograms(Player player) {
         Main.getInstance().getServer().getScheduler().runTask(Main.getInstance(), () -> {
-            for (Location holoLocation : StatisticsHolograms.this.hologramLocations) {
-            	StatisticsHolograms.this.updatePlayerHologram(player, holoLocation);
+            for (Location holoLocation : this.hologramLocations) {
+            	this.updatePlayerHologram(player, holoLocation);
             }
         });
 	}
 
 	public void updateHolograms(Player player, long delay) {
-        Main.getInstance().getServer().getScheduler().runTaskLater(Main.getInstance(), () -> StatisticsHolograms.this.updateHolograms(player), delay);
+        Main.getInstance().getServer().getScheduler().runTaskLater(Main.getInstance(), () -> this.updateHolograms(player), delay);
 	}
 
     public void cleanupPlayerLeave(OfflinePlayer player) {
@@ -118,8 +118,8 @@ public class StatisticsHolograms {
 	public void updateHolograms() {
         for (final Player player : Bukkit.getServer().getOnlinePlayers()) {
             Main.getInstance().getServer().getScheduler().runTask(Main.getInstance(), () -> {
-                for (Location holoLocation : StatisticsHolograms.this.hologramLocations) {
-                	StatisticsHolograms.this.updatePlayerHologram(player, holoLocation);
+                for (Location holoLocation : this.hologramLocations) {
+                	this.updatePlayerHologram(player, holoLocation);
                 }
             });
         }

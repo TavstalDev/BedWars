@@ -600,7 +600,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
     }
 
     public void addStatistic(UUID playerId) {
-        if (dailyScores.containsKey(playerId)) {
+        if (allScores.containsKey(playerId)) {
             return;
         }
 

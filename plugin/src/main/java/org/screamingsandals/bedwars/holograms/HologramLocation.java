@@ -5,13 +5,16 @@ import org.screamingsandals.bedwars.api.statistics.ELeaderboardKind;
 import org.screamingsandals.bedwars.api.statistics.ELeaderboardStatType;
 
 import java.util.Objects;
+import java.util.UUID;
 
 public class HologramLocation extends Location {
+    public UUID id;
     public ELeaderboardKind leaderboardKind;
     public ELeaderboardStatType leaderboardType;
 
-    public HologramLocation(Location loc, ELeaderboardStatType type, ELeaderboardKind kind) {
+    public HologramLocation(UUID id, Location loc, ELeaderboardStatType type, ELeaderboardKind kind) {
         super(loc.getWorld(), loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
+        this.id = id;
         this.leaderboardType = type;
         this.leaderboardKind = kind;
     }
@@ -27,7 +30,8 @@ public class HologramLocation extends Location {
         HologramLocation that = (HologramLocation) o;
 
         // Then, check the fields unique to HologramLocation
-        return leaderboardKind == that.leaderboardKind &&
+        return Objects.equals(id, that.id) &&
+                leaderboardKind == that.leaderboardKind &&
                 leaderboardType == that.leaderboardType &&
                 getWorld() == that.getWorld() &&
                 getX() == that.getX() &&
@@ -39,6 +43,6 @@ public class HologramLocation extends Location {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), leaderboardKind, leaderboardType);
+        return Objects.hash(super.hashCode(), id, leaderboardKind, leaderboardType);
     }
 }

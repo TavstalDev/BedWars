@@ -33,21 +33,19 @@ import org.screamingsandals.bedwars.api.statistics.LeaderboardEntry;
 import org.screamingsandals.bedwars.utils.HoloUtils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.screamingsandals.bedwars.lib.lang.I.i18nonly;
 
 public class LeaderboardHolograms {
-    private ArrayList<HologramLocation> hologramLocations;
-    private Map<HologramLocation, TextHologram> holograms;
+    private Map<UUID, HologramLocation> hologramLocations;
+    private Map<UUID, TextHologram> holograms;
     private Map<ELeaderboardKind, Map<ELeaderboardStatType, List<LeaderboardEntry>>> entries;
 
     public void addHologramLocation(Location eyeLocation, ELeaderboardStatType type, ELeaderboardKind kind) {
-        this.hologramLocations.add(new HologramLocation(eyeLocation.subtract(0, 3, 0), type, kind));
+        UUID id = UUID.randomUUID();
+        this.hologramLocations.put(id, new HologramLocation(id, eyeLocation.subtract(0, 3, 0), type, kind));
         this.updateHologramDatabase();
 
         if (entries == null) {
@@ -113,7 +111,7 @@ public class LeaderboardHolograms {
         }
 
         this.holograms = new HashMap<>();
-        this.hologramLocations = new ArrayList<>();
+        this.hologramLocations = new HashMap<>();
 
         File file = new File(Main.getInstance().getDataFolder(), "holodb_leaderboard.yml");
         if (file.exists()) {
@@ -125,8 +123,6 @@ public class LeaderboardHolograms {
                     return;
                 }
 
-                hologramLocations.clear(); // Clear existing locations before loading new ones
-
                 for (Map<?, ?> locationData : serializedLocations) {
                     String worldName = (String) locationData.get("world");
                     World world = Bukkit.getWorld(worldName);
@@ -135,6 +131,7 @@ public class LeaderboardHolograms {
                         continue;
                     }
 
+                    UUID id = UUID.fromString((String) locationData.get("id"));
                     double x = (double) locationData.get("x");
                     double y = (double) locationData.get("y");
                     double z = (double) locationData.get("z");
@@ -144,8 +141,8 @@ public class LeaderboardHolograms {
                     ELeaderboardKind kind = ELeaderboardKind.valueOf((String)locationData.get("leaderboardKind"));
 
                     Location loc = new Location(world, x, y, z, yaw, pitch);
-                    HologramLocation hologramLoc = new HologramLocation(loc, leaderboardType, kind);
-                    hologramLocations.add(hologramLoc);
+                    HologramLocation hologramLoc = new HologramLocation(id, loc, leaderboardType, kind);
+                    hologramLocations.put(hologramLoc.id, hologramLoc);
                 }
             } catch (Throwable t) {
                 Main.getInstance().getLogger().severe("Failed to load holograms from " + file.getAbsolutePath());
@@ -170,8 +167,9 @@ public class LeaderboardHolograms {
             }
 
             List<Map<String, Object>> serializedLocations = new ArrayList<>();
-            for (HologramLocation loc : hologramLocations) {
+            for (HologramLocation loc : hologramLocations.values()) {
                 Map<String, Object> locationData = new HashMap<>();
+                locationData.put("id", loc.id.toString());
                 locationData.put("world", loc.getWorld().getName());
                 locationData.put("x", loc.getX());
                 locationData.put("y", loc.getY());
@@ -208,13 +206,13 @@ public class LeaderboardHolograms {
     }*/
 
     private void updateHolograms() {
-        hologramLocations.forEach(location -> {
-            if (!holograms.containsKey(location)) {
+        hologramLocations.forEach((uuid, location) -> {
+            if (!holograms.containsKey(uuid)) {
                 TextHologram hologram = HoloUtils.createHologram(location, RenderMode.ALL);
-                holograms.put(location, hologram);
-                //holograms.get(location).addHandler(this);
+                holograms.put(uuid, hologram);
+                //holograms.get(uuid).addHandler(this);
             }
-            updateHologram(location.leaderboardType, location.leaderboardKind, holograms.get(location));
+            updateHologram(location.leaderboardType, location.leaderboardKind, holograms.get(uuid));
         });
         //Bukkit.getOnlinePlayers().forEach(this::addViewer);
     }
