@@ -2251,8 +2251,13 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                                 }
 
                                                 if (madeRecord) {
-                                                    statistic.addScore(Main.getConfigurator().config.getInt("statistics.scores.record", 100));
+                                                    int recordScore = Main.getConfigurator().config.getInt("statistics.scores.record", 100);
+                                                    statistic.addScore(recordScore);
+                                                    seasonalStatistic.addScore(recordScore);
+                                                    dailyStatistic.addScore(recordScore);
                                                     Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
+                                                    Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
+                                                    Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
                                                 }
 
                                                 if (Main.isHologramsEnabled()) {
