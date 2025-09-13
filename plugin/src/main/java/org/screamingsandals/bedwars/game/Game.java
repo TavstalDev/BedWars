@@ -24,6 +24,7 @@ import static org.screamingsandals.bedwars.lib.lang.I.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import com.maximde.hologramlib.hologram.RenderMode;
@@ -496,7 +497,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
         if (isTargetBlock(loc)) {
 
             // Anti - Bed Fucker
-            if (!CheatUtil.isLookingAtTargetBlock(player.player, 10, block))
+            if (!CheatUtil.isLookingAtTargetBlock(player.player, 3, block))
                 return false;
 
             if (region.isBedBlock(block.getState())) {
