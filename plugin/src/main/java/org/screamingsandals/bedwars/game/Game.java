@@ -494,6 +494,11 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
             }
         }
         if (isTargetBlock(loc)) {
+
+            // Anti - Bed Fucker
+            if (CheatUtil.isLookingAtTargetBlock(player.player, 10, block))
+                return false;
+
             if (region.isBedBlock(block.getState())) {
                 if (getPlayerTeam(player).teamInfo.bed.equals(loc)) {
                     return false;
