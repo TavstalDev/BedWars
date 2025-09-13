@@ -208,7 +208,7 @@ public class LeaderboardHolograms {
     private void updateHolograms() {
         hologramLocations.forEach((uuid, location) -> {
             if (!holograms.containsKey(uuid)) {
-                TextHologram hologram = HoloUtils.createHologram(location, RenderMode.ALL);
+                TextHologram hologram = HoloUtils.createHologram(location, RenderMode.ALL, 0.5);
                 holograms.put(uuid, hologram);
                 //holograms.get(uuid).addHandler(this);
             }

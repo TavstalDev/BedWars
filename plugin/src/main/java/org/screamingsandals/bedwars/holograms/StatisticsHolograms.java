@@ -157,7 +157,7 @@ public class StatisticsHolograms {
 	}
 
     private TextHologram createPlayerStatisticHologram(Player player, Location holoLocation) {
-        final TextHologram holo = HoloUtils.createHologram(holoLocation, RenderMode.VIEWER_LIST);
+        final TextHologram holo = HoloUtils.createHologram(holoLocation, RenderMode.VIEWER_LIST, 0.5);
         this.updatePlayerStatisticHologram(player, holo);
         return holo;
     }

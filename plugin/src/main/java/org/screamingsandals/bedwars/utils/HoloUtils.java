@@ -10,10 +10,10 @@ import java.util.UUID;
 
 public class HoloUtils {
 
-    public static TextHologram createHologram(Location location, RenderMode renderMode) {
+    public static TextHologram createHologram(Location location, RenderMode renderMode, double viewRange) {
         TextHologram hologram = new TextHologram(UUID.randomUUID().toString(), renderMode);
         hologram.setSeeThroughBlocks(true);
-        hologram.setViewRange(0.5);
+        hologram.setViewRange(viewRange);
         hologram.setBackgroundColor(ColorChanger.toARGB(64, 0, 0, 0));
         hologram.setBillboard(Display.Billboard.VERTICAL);
         Main.getHologramLibManager().spawn(hologram, location);

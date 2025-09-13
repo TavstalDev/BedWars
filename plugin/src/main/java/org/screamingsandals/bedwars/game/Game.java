@@ -496,7 +496,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
         if (isTargetBlock(loc)) {
 
             // Anti - Bed Fucker
-            if (CheatUtil.isLookingAtTargetBlock(player.player, 10, block))
+            if (!CheatUtil.isLookingAtTargetBlock(player.player, 10, block))
                 return false;
 
             if (region.isBedBlock(block.getState())) {
@@ -2001,7 +2001,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                             if (spawner.getHologramEnabled()) {
                                 Location loc = spawner.loc.clone().add(0,
                                         Main.getConfigurator().config.getDouble("spawner-holo-height", 0.25), 0);
-                                TextHologram holo = HoloUtils.createHologram(loc, RenderMode.ALL);
+                                TextHologram holo = HoloUtils.createHologram(loc, RenderMode.ALL, 0.3);
                                 createdHolograms.add(holo);
                                 if (getOriginalOrInheritedSpawnerHologramsCountdown()) {
                                     holo.setText(spawner.type.getInterval() < 2 ? i18nonly("every_second_spawning")
@@ -2129,7 +2129,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                             }
                             List<Player> enemies = getConnectedPlayers();
                             enemies.removeAll(team.getConnectedPlayers());
-                            TextHologram holo = HoloUtils.createHologram(loc, RenderMode.VIEWER_LIST);
+                            TextHologram holo = HoloUtils.createHologram(loc, RenderMode.VIEWER_LIST, 0.3);
                             holo.setText(i18nonly(isDoor ? "destroy_this_door" : (isBlockTypeBed ? "destroy_this_bed" : (isAnchor ? "destroy_this_anchor" : (isCake ? "destroy_this_cake" : "destroy_this_target"))))
                                     .replace("%teamcolor%", team.teamInfo.color.chatColor.toString()));
                             holo.update();
@@ -2138,7 +2138,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                             createdHolograms.add(holo);
                             team.setBedHolo(holo);
 
-                            TextHologram protectHolo = HoloUtils.createHologram(loc, RenderMode.VIEWER_LIST);
+                            TextHologram protectHolo = HoloUtils.createHologram(loc, RenderMode.VIEWER_LIST, 0.3);
                             holo.setText(i18nonly(isDoor ? "protect_your_door" : (isBlockTypeBed ? "protect_your_bed" : (isAnchor ? "protect_your_anchor" : (isCake ? "protect_your_cake" : "protect_your_target"))))
                                     .replace("%teamcolor%", team.teamInfo.color.chatColor.toString()));
                             holo.update();
