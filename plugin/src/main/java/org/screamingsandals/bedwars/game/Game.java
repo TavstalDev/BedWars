@@ -497,7 +497,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
         if (isTargetBlock(loc)) {
 
             // Anti - Bed Fucker
-            if (!CheatUtil.isLookingAtTargetBlock(player.player, 3, block))
+            if (!CheatUtil.isLookingAtTargetBlock(player.player, 5, block))
                 return false;
 
             if (region.isBedBlock(block.getState())) {
