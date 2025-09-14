@@ -1842,7 +1842,16 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                 if (countdown == 0) {
                     nextCountdown = gameTime;
                     nextStatus = GameStatus.RUNNING;
-                } else {
+                    for (GamePlayer player : players) {
+                        if (getPlayerTeam(player) == null) {
+                            joinRandomTeam(player);
+                        }
+                    }
+                }
+                else if (nextCountdown > 10 && players.size() == getMaxPlayers()) {
+                    nextCountdown = 5;
+                }
+                else {
                     nextCountdown--;
 
                     if (countdown <= 10 && countdown >= 1 && countdown != previousCountdown) {
