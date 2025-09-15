@@ -1837,7 +1837,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                 }
             } else if (
                     players.size() >= getMinPlayers()
-                    && (teamsInGame.size() > 1 || (getOriginalOrInheritedJoinRandomTeamAfterLobby() && countRespawnable() < players.size()))
+                    /*&& (teamsInGame.size() > 1 || (getOriginalOrInheritedJoinRandomTeamAfterLobby() && countRespawnable() < players.size()))*/
             ) {
                 if (countdown == 0) {
                     nextCountdown = gameTime;
