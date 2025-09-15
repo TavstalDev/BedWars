@@ -49,6 +49,14 @@ public class ItemSpawner implements org.screamingsandals.bedwars.api.game.ItemSp
     public boolean spawnerLockedFull;
     public double countdownDelay;
     public double currentCycle;
+    private double nextSpawnTime;
+    public double getNextSpawnTime() {
+        return nextSpawnTime;
+    }
+
+    public void setNextSpawnTime(double nextSpawnTime) {
+        this.nextSpawnTime = nextSpawnTime;
+    }
 
     public ItemSpawner(Location loc, ItemSpawnerType type, String customName, boolean hologramEnabled, double startLevel, Team team, int maxSpawnedResources) {
         this.loc = loc;

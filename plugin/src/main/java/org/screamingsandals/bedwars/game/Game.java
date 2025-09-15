@@ -2536,7 +2536,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                 continue; // team of this spawner is not available. Fix #147
             }
 
-            double cycle = spawner.currentCycle * 4;
+            double cycle = spawner.currentCycle;
             /*
              * Calculate resource spawn from elapsedTime, not from remainingTime/countdown
              */
@@ -2562,9 +2562,9 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                         && getOriginalOrInheritedSpawnerHologramsCountdown()
                         && !spawner.spawnerIsFullHologram) {
                     if (cycle > 1) {
-                        double modulo = cycle - elapsedTime % cycle;
+                        //double modulo = cycle - elapsedTime % cycle;
                         countdownHolograms.get(spawner).setText(
-                                i18nonly("countdown_spawning").replace("%seconds%", Double.toString(modulo)));
+                                i18nonly("countdown_spawning").replace("%seconds%", String.format("%.2f", spawner.getNextSpawnTime())));
                         countdownHolograms.get(spawner).update();
                     } else if (spawner.rerenderHologram) {
                         countdownHolograms.get(spawner).setText(i18nonly("every_second_spawning"));
@@ -2580,7 +2580,9 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                 }
             }
 
-            if (!preventSpawn && (elapsedTime % cycle) == 0) {
+            spawner.setNextSpawnTime(spawner.getNextSpawnTime() - 0.25);
+
+            if (!preventSpawn && spawner.getNextSpawnTime() <= 0)  {
                 int calculatedStack = 1;
                 double currentLevel = spawner.getCurrentLevel();
                 calculatedStack = (int) currentLevel;
@@ -2599,6 +2601,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                 Main.getInstance().getServer().getPluginManager().callEvent(resourceSpawnEvent);
 
                 if (resourceSpawnEvent.isCancelled()) {
+                    spawner.setNextSpawnTime(cycle);
                     continue;
                 }
 
@@ -2616,6 +2619,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                     item.setPickupDelay(0);
                     spawner.add(item);
                 }
+                spawner.setNextSpawnTime(cycle);
             }
         }
     }
