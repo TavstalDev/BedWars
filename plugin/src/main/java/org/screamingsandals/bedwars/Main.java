@@ -531,7 +531,7 @@ public class Main extends JavaPlugin implements BedwarsAPI {
 
             String name = Main.getConfigurator().config.getString("resources." + spawnerN + ".name");
             String translate = Main.getConfigurator().config.getString("resources." + spawnerN + ".translate");
-            int interval = Main.getConfigurator().config.getInt("resources." + spawnerN + ".interval", 1);
+            double interval = Main.getConfigurator().config.getDouble("resources." + spawnerN + ".interval", 1);
             double spread = Main.getConfigurator().config.getDouble("resources." + spawnerN + ".spread");
             int damage = Main.getConfigurator().config.getInt("resources." + spawnerN + ".damage");
             String materialName = Main.getConfigurator().config.getString("resources." + spawnerN + ".material", "AIR");

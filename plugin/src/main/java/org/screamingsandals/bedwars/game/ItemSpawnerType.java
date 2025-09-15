@@ -33,11 +33,11 @@ public class ItemSpawnerType implements org.screamingsandals.bedwars.api.game.It
     private double spread;
     private Material material;
     private ChatColor color;
-    private int interval;
+    private double interval;
     private int damage;
 
     public ItemSpawnerType(String configKey, String name, String translatableKey, double spread, Material material,
-                           ChatColor color, int interval, int damage) {
+                           ChatColor color, double interval, int damage) {
         this.configKey = configKey;
         this.name = name;
         this.translatableKey = translatableKey;
@@ -56,7 +56,7 @@ public class ItemSpawnerType implements org.screamingsandals.bedwars.api.game.It
         return color;
     }
 
-    public int getInterval() {
+    public double getInterval() {
         return interval;
     }
 

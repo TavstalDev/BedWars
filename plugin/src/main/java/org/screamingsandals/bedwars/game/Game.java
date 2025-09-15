@@ -2016,7 +2016,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                 if (getOriginalOrInheritedSpawnerHologramsCountdown()) {
                                     holo.setText(spawner.type.getInterval() < 2 ? i18nonly("every_second_spawning")
                                             : i18nonly("countdown_spawning").replace("%seconds%",
-                                            Integer.toString(spawner.type.getInterval())));
+                                            Double.toString(spawner.type.getInterval())));
                                     countdownHolograms.put(spawner, holo);
                                     holo.update();
                                 }
@@ -2352,11 +2352,11 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                             continue; // team of this spawner is not available. Fix #147
                         }
 
-                        int cycle = spawner.currentCycle;
+                        double cycle = spawner.currentCycle;
                         /*
                          * Calculate resource spawn from elapsedTime, not from remainingTime/countdown
                          */
-                        int elapsedTime = gameTime - countdown - spawner.countdownDelay;
+                        double elapsedTime = gameTime - countdown - spawner.countdownDelay;
                         boolean preventSpawn = false;
 
                         if (Main.getConfigurator().config.getBoolean("reset-full-spawner-countdown-after-picking") && spawner.spawnerLockedFull) {
@@ -2378,9 +2378,9 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                     && getOriginalOrInheritedSpawnerHologramsCountdown()
                                     && !spawner.spawnerIsFullHologram) {
                                 if (cycle > 1) {
-                                    int modulo = cycle - elapsedTime % cycle;
+                                    double modulo = cycle - elapsedTime % cycle;
                                     countdownHolograms.get(spawner).setText(
-                                            i18nonly("countdown_spawning").replace("%seconds%", Integer.toString(modulo)));
+                                            i18nonly("countdown_spawning").replace("%seconds%", Double.toString(modulo)));
                                     countdownHolograms.get(spawner).update();
                                 } else if (spawner.rerenderHologram) {
                                     countdownHolograms.get(spawner).setText(i18nonly("every_second_spawning"));
