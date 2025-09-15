@@ -24,7 +24,6 @@ import static org.screamingsandals.bedwars.lib.lang.I.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import com.maximde.hologramlib.hologram.RenderMode;
@@ -226,6 +225,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
     private int countdown = -1, previousCountdown = -1;
     private int calculatedMaxPlayers;
     private BukkitTask task;
+    private BukkitTask resourceTask;
     private List<CurrentTeam> teamsInGame = new ArrayList<>();
     private Region region = Main.isLegacy() ? new LegacyRegion() : new FlatteningRegion();
     private Scoreboard gameScoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
@@ -2342,7 +2342,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                         tick.setNextCountdown(0);
                     }
                 } else if (countdown != gameTime /* Prevent spawning resources on game start */) {
-                    for (ItemSpawner spawner : spawners) {
+                    /*for (ItemSpawner spawner : spawners) {
                         if (spawner.type == null) {
                             continue;
                         }
@@ -2353,9 +2353,9 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                         }
 
                         double cycle = spawner.currentCycle;
-                        /*
-                         * Calculate resource spawn from elapsedTime, not from remainingTime/countdown
-                         */
+
+                        //Calculate resource spawn from elapsedTime, not from remainingTime/countdown
+
                         double elapsedTime = gameTime - countdown - spawner.countdownDelay;
                         boolean preventSpawn = false;
 
@@ -2401,8 +2401,8 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                             double currentLevel = spawner.getCurrentLevel();
                             calculatedStack = (int) currentLevel;
 
-                            /* fractional levels: have a weighted chance to increment */
-                            /* for example, 3.1 -> 10% chance for 4 and 90% chance for 3 */
+                            // fractional levels: have a weighted chance to increment
+                            // for example, 3.1 -> 10% chance for 4 and 90% chance for 3
                             if ((currentLevel % 1) != 0) {
                                 if (Math.random() < (currentLevel % 1)) {
                                     calculatedStack++;
@@ -2433,7 +2433,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                 spawner.add(item);
                             }
                         }
-                    }
+                    }*/
                 }
             }
         }
@@ -2510,6 +2510,112 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                     }
 
                 }.runTaskLater(Main.getInstance(), 30L);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public void resourceRun() {
+        // Phase 1: Check if game is running
+        if (status == GameStatus.DISABLED) { // Game is not running, why cycle is still running?
+            cancelTask();
+            return;
+        }
+
+        if (status != GameStatus.RUNNING || countdown == gameTime) {
+            return;
+        }
+
+        for (ItemSpawner spawner : spawners) {
+            if (spawner.type == null) {
+                continue;
+            }
+
+            CurrentTeam spawnerTeam = getCurrentTeamFromTeam(spawner.getTeam());
+            if (getOriginalOrInheritedStopTeamSpawnersOnDie() && spawner.getTeam() != null && spawnerTeam == null) {
+                continue; // team of this spawner is not available. Fix #147
+            }
+
+            double cycle = spawner.currentCycle * 4;
+            /*
+             * Calculate resource spawn from elapsedTime, not from remainingTime/countdown
+             */
+            double elapsedTime = gameTime - countdown - spawner.countdownDelay;
+            boolean preventSpawn = false;
+
+            if (Main.getConfigurator().config.getBoolean("reset-full-spawner-countdown-after-picking") && spawner.spawnerLockedFull) {
+                spawner.flushDeathItems();
+                if (spawner.getMaxSpawnedResources() > spawner.getSpawnedItemsCount()) {
+                    // the spawner is locked, but should now be unlocked
+                    elapsedTime += spawner.countdownDelay;
+                    spawner.countdownDelay = elapsedTime % cycle;
+                    elapsedTime -= spawner.countdownDelay;
+                    spawner.spawnerLockedFull = false;
+                    preventSpawn = true;
+                } else {
+                    continue;
+                }
+            }
+
+            if (spawner.getHologramEnabled()) {
+                if (getOriginalOrInheritedSpawnerHolograms()
+                        && getOriginalOrInheritedSpawnerHologramsCountdown()
+                        && !spawner.spawnerIsFullHologram) {
+                    if (cycle > 1) {
+                        double modulo = cycle - elapsedTime % cycle;
+                        countdownHolograms.get(spawner).setText(
+                                i18nonly("countdown_spawning").replace("%seconds%", Double.toString(modulo)));
+                        countdownHolograms.get(spawner).update();
+                    } else if (spawner.rerenderHologram) {
+                        countdownHolograms.get(spawner).setText(i18nonly("every_second_spawning"));
+                        countdownHolograms.get(spawner).update();
+                        spawner.rerenderHologram = false;
+                    }
+                }
+            }
+
+            if (spawnerTeam != null) {
+                if (getOriginalOrInheritedStopTeamSpawnersOnDie() && (spawnerTeam.isDead())) {
+                    continue;
+                }
+            }
+
+            if (!preventSpawn && (elapsedTime % cycle) == 0) {
+                int calculatedStack = 1;
+                double currentLevel = spawner.getCurrentLevel();
+                calculatedStack = (int) currentLevel;
+
+                /* fractional levels: have a weighted chance to increment */
+                /* for example, 3.1 -> 10% chance for 4 and 90% chance for 3 */
+                if ((currentLevel % 1) != 0) {
+                    if (Math.random() < (currentLevel % 1)) {
+                        calculatedStack++;
+                    }
+                }
+
+                ItemSpawnerType type = spawner.type;
+                BedwarsResourceSpawnEvent resourceSpawnEvent = new BedwarsResourceSpawnEvent(this, spawner,
+                        type.getStack(calculatedStack));
+                Main.getInstance().getServer().getPluginManager().callEvent(resourceSpawnEvent);
+
+                if (resourceSpawnEvent.isCancelled()) {
+                    continue;
+                }
+
+                ItemStack resource = resourceSpawnEvent.getResource();
+
+                resource.setAmount(spawner.nextMaxSpawn(resource.getAmount(), countdownHolograms.get(spawner)));
+
+                if (resource.getAmount() > 0) {
+                    Location loc = spawner.getLocation().clone().add(0, 0.05, 0);
+                    Item item = loc.getWorld().dropItem(loc, resource);
+                    double spread = type.getSpread();
+                    if (spread != 1.0) {
+                        item.setVelocity(item.getVelocity().multiply(spread));
+                    }
+                    item.setPickupDelay(0);
+                    spawner.add(item);
+                }
             }
         }
     }
@@ -2649,6 +2755,18 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
             }
 
         }.runTaskTimer(Main.getInstance(), 0, 20));
+
+        if (resourceTask != null) {
+            if (Bukkit.getScheduler().isQueued(resourceTask.getTaskId())) {
+                resourceTask.cancel();
+            }
+            resourceTask = null;
+        }
+        resourceTask = (new BukkitRunnable() {
+            public void run() {
+                Game.this.resourceRun();
+            }
+        }).runTaskTimer(Main.getInstance(), 0, 5);
     }
 
     private void cancelTask() {
@@ -2657,6 +2775,12 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                 task.cancel();
             }
             task = null;
+        }
+        if (resourceTask != null) {
+            if (Bukkit.getScheduler().isQueued(resourceTask.getTaskId())) {
+                resourceTask.cancel();
+            }
+            resourceTask = null;
         }
     }
 
