@@ -2258,7 +2258,8 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                                     BanyaszApi api = Main.getBanyaszApi();
                                                     if (api != null) {
                                                         int coins = Main.getCoinsReward();
-                                                        if (coins > 0) {
+                                                        int minutes = (int) Math.floor(countdown / 60);
+                                                        if (coins > 0 && minutes > 2) {
                                                             api.increaseBalance(player.player.getUniqueId(), coins);
                                                             player.player.sendMessage(i18n("received_coins", true).replace("%amount%", Integer.toString(coins)));
                                                         }
