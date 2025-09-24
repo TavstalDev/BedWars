@@ -24,6 +24,7 @@ import static org.screamingsandals.bedwars.lib.lang.I.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import com.maximde.hologramlib.hologram.RenderMode;
@@ -2220,7 +2221,9 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                             for (CurrentTeam t : teamsInGame) {
                                 if (t.isAlive()) {
                                     winner = t;
-                                    String time = getFormattedTimeLeftS(gameTime - countdown);
+                                    int winTime = gameTime - countdown;
+                                    int winMinutes = (int) Math.floor(winTime/ 60f);
+                                    String time = getFormattedTimeLeftS(winTime);
                                     String message = i18nc("team_win", customPrefix)
                                             .replace("%team%", TeamColor.fromApiColor(t.getColor()).chatColor + t.getName())
                                             .replace("%time%", time);
@@ -2258,8 +2261,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                                     BanyaszApi api = Main.getBanyaszApi();
                                                     if (api != null) {
                                                         int coins = Main.getCoinsReward();
-                                                        int minutes = (int) Math.floor(countdown / 60);
-                                                        if (coins > 0 && minutes > 2) {
+                                                        if (coins > 0 && winMinutes > 2) {
                                                             api.increaseBalance(player.player.getUniqueId(), coins);
                                                             player.player.sendMessage(i18n("received_coins", true).replace("%amount%", Integer.toString(coins)));
                                                         }
