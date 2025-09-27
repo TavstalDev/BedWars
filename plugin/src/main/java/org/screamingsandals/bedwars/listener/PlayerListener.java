@@ -835,13 +835,14 @@ public class PlayerListener implements Listener {
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null) {
             if (event.getClickedBlock().getType() == Material.CHEST && game.getStatus() == GameStatus.WAITING) {
                 event.setCancelled(true);
+                return;
             }
             else if (event.getClickedBlock().getType() == Material.CAMPFIRE || event.getClickedBlock().getType() == Material.SOUL_CAMPFIRE
             || event.getClickedBlock().getType() == Material.FLOWER_POT || event.getClickedBlock().getType() == Material.ITEM_FRAME)
             {
                 event.setCancelled(true);
+                return;
             }
-            return;
         }
 
 
