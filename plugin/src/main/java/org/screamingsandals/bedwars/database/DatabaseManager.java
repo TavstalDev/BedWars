@@ -134,6 +134,7 @@ public class DatabaseManager {
         return null;
     }
 
+    //#region All Time
     public String getCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS `" + tablePrefix
                 + "stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(36) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
@@ -151,7 +152,9 @@ public class DatabaseManager {
     public String getScoresSql() {
         return "SELECT * FROM " + tablePrefix + "stats_players";
     }
+    //#endregion
 
+    //#region Seasonal
     public String getSeasonalCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS `" + tablePrefix
                 + "seasonal_stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(36) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
@@ -173,7 +176,9 @@ public class DatabaseManager {
     public String getSeasonalScoresSql() {
         return "SELECT * FROM " + tablePrefix + "seasonal_stats_players";
     }
+    //#endregion
 
+    //#region Daily
     public String getDailyCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS `" + tablePrefix
                 + "daily_stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(36) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
@@ -195,6 +200,32 @@ public class DatabaseManager {
     public String getDailyResetSql() {
         return "TRUNCATE TABLE " + tablePrefix + "daily_stats_players";
     }
+    //#endregion
+
+    //#region Events
+    // TODO: Remove this after the event ended
+    public String getEventCreateTableSql() {
+        return "CREATE TABLE IF NOT EXISTS `" + tablePrefix
+                + "event_stats_players` (`kills` int(11) NOT NULL DEFAULT '0', `wins` int(11) NOT NULL DEFAULT '0', `score` int(11) NOT NULL DEFAULT '0', `loses` int(11) NOT NULL DEFAULT '0', `name` varchar(255) NOT NULL, `destroyedBeds` int(11) NOT NULL DEFAULT '0', `uuid` varchar(36) NOT NULL, `deaths` int(11) NOT NULL DEFAULT '0', PRIMARY KEY (`uuid`))";
+    }
+
+    public String getEventReadObjectSql() {
+        return "SELECT * FROM " + tablePrefix + "event_stats_players WHERE uuid = ? LIMIT 1";
+    }
+
+    public String getEventWriteObjectSql() {
+        return "INSERT INTO " + tablePrefix
+                + "event_stats_players(uuid, name, deaths, destroyedBeds, kills, loses, score, wins) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE uuid=VALUES(uuid),name=VALUES(name),deaths=VALUES(deaths),destroyedBeds=VALUES(destroyedBeds),kills=VALUES(kills),loses=VALUES(loses),score=VALUES(score),wins=VALUES(wins)";
+    }
+
+    public String getEventScoresSql() {
+        return "SELECT * FROM " + tablePrefix + "event_stats_players";
+    }
+
+    public String getEventResetSql() {
+        return "TRUNCATE TABLE " + tablePrefix + "event_stats_players";
+    }
+    //#endregion
 
     public String getTablePrefix() {
         return tablePrefix;
