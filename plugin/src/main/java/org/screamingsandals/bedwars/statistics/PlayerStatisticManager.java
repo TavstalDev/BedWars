@@ -310,7 +310,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                             statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
                             statistic.addScore(resultSet.getInt("score"));
                             statistic.setName(resultSet.getString("name"));
-                            dailyScores.put(uuid, statistic);
+                            eventScores.put(uuid, statistic);
                         } while (resultSet.next());
                     }
                 } catch (Exception ex) {
@@ -489,6 +489,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             this.databaseFile = ymlFile;
             this.seasonalDatabaseFile = seasonalYmlFile;
             this.dailyDatabaseFile = dailyYmlFile;
+            this.eventDatabaseFile = eventYmlFile;
 
             // All-time stats
             if (!ymlFile.exists()) {
