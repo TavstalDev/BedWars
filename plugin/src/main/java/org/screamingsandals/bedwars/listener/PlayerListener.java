@@ -144,20 +144,16 @@ public class PlayerListener implements Listener {
                         // TODO: Clean this up
                         PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(victim);
                         PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(victim);
-                        PlayerStatistic eventStatistic = Main.getPlayerStatisticsManager().getEventStatistic(victim);
                         statistic.addLoses(1);
                         seasonalStatistic.addLoses(1);
                         dailyStatistic.addLoses(1);
-                        eventStatistic.addLoses(1);
                         int score = Main.getConfigurator().config.getInt("statistics.scores.lose", 0);
                         statistic.addScore(score);
                         seasonalStatistic.addScore(score);
                         dailyStatistic.addScore(score);
-                        eventStatistic.addScore(score);
                         Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
                         Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
                         Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
-                        Main.getPlayerStatisticsManager().updateEventScore(eventStatistic);
                     }
                     game.updateScoreboard();
                 }
@@ -214,7 +210,6 @@ public class PlayerListener implements Listener {
                         PlayerStatistic diePlayer = Main.getPlayerStatisticsManager().getStatistic(victim);
                         PlayerStatistic dieSeasonPlayer = Main.getPlayerStatisticsManager().getSeasonalStatistic(victim);
                         PlayerStatistic dieDailyPlayer = Main.getPlayerStatisticsManager().getDailyStatistic(victim);
-                        PlayerStatistic dieEventPlayer = Main.getPlayerStatisticsManager().getEventStatistic(victim);
 
                         if (diePlayer != null) {
                             diePlayer.addDeaths(1);
@@ -240,14 +235,6 @@ public class PlayerListener implements Listener {
                         }
                         else
                             Main.getInstance().getLogger().warning("Die daily player is null for " + victim.getName());
-
-                        if (dieEventPlayer != null) {
-                            dieEventPlayer.addDeaths(1);
-                            dieEventPlayer.addScore(deathScore);
-                            Main.getPlayerStatisticsManager().updateEventScore(dieEventPlayer);
-                        }
-                        else
-                            Main.getInstance().getLogger().warning("Die event player is null for " + victim.getName());
                     }
 
                     if (killer != null) {
@@ -256,7 +243,6 @@ public class PlayerListener implements Listener {
                             // TODO: Clean this up
                             PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(killer);
                             PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(killer);
-                            PlayerStatistic eventStatistic = Main.getPlayerStatisticsManager().getEventStatistic(killer);
                             int killScore = Main.getConfigurator().config.getInt("statistics.scores.kill", 10);
                             if (killerPlayer != null) {
                                 killerPlayer.addKills(1);
@@ -282,14 +268,6 @@ public class PlayerListener implements Listener {
                             else
                                 Main.getInstance().getLogger().warning("Killer daily player is null for " + killer.getName());
 
-                            if (eventStatistic != null) {
-                                eventStatistic.addKills(1);
-                                eventStatistic.addScore(killScore);
-                                Main.getPlayerStatisticsManager().updateEventScore(eventStatistic);
-                            }
-                            else
-                                Main.getInstance().getLogger().warning("Killer event player is null for " + killer.getName());
-
                             if (!isBed) {
                                 int score = Main.getConfigurator().config.getInt("statistics.scores.final-kill", 0);
                                 if (killerPlayer != null) {
@@ -303,10 +281,6 @@ public class PlayerListener implements Listener {
                                 if (dailyStatistic != null) {
                                     dailyStatistic.addScore(score);
                                     Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
-                                }
-                                if (eventStatistic != null) {
-                                    eventStatistic.addScore(score);
-                                    Main.getPlayerStatisticsManager().updateEventScore(eventStatistic);
                                 }
                             }
                         }
@@ -449,8 +423,6 @@ public class PlayerListener implements Listener {
             Main.getPlayerStatisticsManager().addStatistic(player.getUniqueId());
             Main.getPlayerStatisticsManager().addSeasonalStatistic(player.getUniqueId());
             Main.getPlayerStatisticsManager().addDailyStatistic(player.getUniqueId());
-            // TODO: Remove event listener after the event ended
-            Main.getPlayerStatisticsManager().addEventStatistic(player.getUniqueId());
         }
     }
 

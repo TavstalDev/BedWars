@@ -703,23 +703,16 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                             // TODO: Clean this up
                             PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(broker);
                             PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(broker);
-                            // TODO: Remove event stats
-                            PlayerStatistic eventStatistic = Main.getPlayerStatisticsManager().getEventStatistic(broker);
                             statistic.addDestroyedBeds(1);
                             seasonalStatistic.addDestroyedBeds(1);
                             dailyStatistic.addDestroyedBeds(1);
-                            // TODO: Remove event stats
-                            eventStatistic.addDestroyedBeds(1);
                             int score = Main.getConfigurator().config.getInt("statistics.scores.bed-destroy", 25);
                             statistic.addScore(score);
                             seasonalStatistic.addScore(score);
                             dailyStatistic.addScore(score);
-                            eventStatistic.addScore(score);
                             Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
                             Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
                             Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
-                            // TODO: Remove event stats
-                            Main.getPlayerStatisticsManager().updateEventScore(eventStatistic);
                             Main.depositPlayer(broker, Main.getVaultBedDestroyReward());
                         }
 
@@ -930,8 +923,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
             PlayerStatistic statistic = Main.getPlayerStatisticsManager().getStatistic(gamePlayer.player.getUniqueId());
             PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(gamePlayer.player.getUniqueId());
             PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(gamePlayer.player.getUniqueId());
-            PlayerStatistic eventStatistic = Main.getPlayerStatisticsManager().getEventStatistic(gamePlayer.player.getUniqueId());
-            Main.getPlayerStatisticsManager().storeStatistic(statistic, seasonalStatistic, dailyStatistic, eventStatistic);
+            Main.getPlayerStatisticsManager().storeStatistic(statistic, seasonalStatistic, dailyStatistic);
             Main.getPlayerStatisticsManager().unloadStatistic(gamePlayer.player);
         }
 
@@ -2253,21 +2245,16 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                                 // TODO: Clean up
                                                 PlayerStatistic seasonalStatistic = Main.getPlayerStatisticsManager().getSeasonalStatistic(player.player);
                                                 PlayerStatistic dailyStatistic = Main.getPlayerStatisticsManager().getDailyStatistic(player.player);
-                                                // TODO: Remove event stats
-                                                PlayerStatistic eventStatistic = Main.getPlayerStatisticsManager().getEventStatistic(player.player);
                                                 statistic.addWins(1);
                                                 seasonalStatistic.addWins(1);
                                                 dailyStatistic.addWins(1);
-                                                eventStatistic.addWins(1);
                                                 int score = Main.getConfigurator().config.getInt("statistics.scores.win", 50);
                                                 statistic.addScore(score);
                                                 seasonalStatistic.addScore(score);
                                                 dailyStatistic.addScore(score);
-                                                eventStatistic.addScore(score);
                                                 Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
                                                 Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
                                                 Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
-                                                Main.getPlayerStatisticsManager().updateEventScore(eventStatistic);
 
                                                 // Send coins to player
                                                 if (Main.getIsBanyasz()) {
@@ -2286,11 +2273,9 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                                                     statistic.addScore(recordScore);
                                                     seasonalStatistic.addScore(recordScore);
                                                     dailyStatistic.addScore(recordScore);
-                                                    eventStatistic.addScore(recordScore);
                                                     Main.getPlayerStatisticsManager().updateAllTImeScore(statistic);
                                                     Main.getPlayerStatisticsManager().updateSeasonalScore(seasonalStatistic);
                                                     Main.getPlayerStatisticsManager().updateDailyScore(dailyStatistic);
-                                                    Main.getPlayerStatisticsManager().updateEventScore(eventStatistic);
                                                 }
 
                                                 if (Main.isHologramsEnabled()) {

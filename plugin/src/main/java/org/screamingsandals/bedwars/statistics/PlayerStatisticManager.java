@@ -48,11 +48,6 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
     private FileConfiguration dailyFileDatabase = null;;
     private final Map<UUID, PlayerStatistic> dailyScores = new HashMap<>();
 
-    // TODO: Remove this after the event ended, this is a temporal solution
-    private File eventDatabaseFile = null;
-    private FileConfiguration eventFileDatabase = null;;
-    private final Map<UUID, PlayerStatistic> eventScores = new HashMap<>();
-
     public PlayerStatistic getStatistic(OfflinePlayer player) {
         if (player == null) {
             return null;
@@ -113,28 +108,6 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         return local;
     }
 
-    // TODO: Remove this after the event ended, this is a temporal solution
-    public PlayerStatistic getEventStatistic(OfflinePlayer player) {
-        if (player == null) {
-            return null;
-        }
-        return getEventStatistic(player.getUniqueId());
-    }
-
-    // TODO: Remove this after the event ended, this is a temporal solution
-    public PlayerStatistic getEventStatistic(UUID uuid) {
-        if (uuid == null) {
-            return null;
-        }
-        var local =  eventScores.get(uuid);
-        // Try prevent null pointer exceptions
-        if (local == null) {
-            addEventStatistic(uuid);
-            local = eventScores.get(uuid);
-        }
-        return local;
-    }
-
     public void initialize() {
         if (!Main.getConfigurator().config.getBoolean("statistics.enabled", false)) {
             return;
@@ -146,9 +119,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             File allStatFile = new File(Main.getInstance().getDataFolder() + "/database/bw_stats_players.yml");
             File seasonalStatFile = new File(Main.getInstance().getDataFolder() + "/database/bw_seasonal_stats_players.yml");
             File dailyStatFile = new File(Main.getInstance().getDataFolder() + "/database/bw_daily_stats_players.yml");
-            // TODO: Remove this after the event ended, this is a temporal solution
-            File eventStatFile = new File(Main.getInstance().getDataFolder() + "/database/bw_event_stats_players.yml");
-            this.loadYml(allStatFile, seasonalStatFile, dailyStatFile, eventStatFile);
+            this.loadYml(allStatFile, seasonalStatFile, dailyStatFile);
         }
 
         this.initializeLeaderboard();
@@ -215,7 +186,6 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         allScores.clear();
         seasonalScores.clear();
         dailyScores.clear();
-        eventScores.clear();
 
         if (Main.getConfigurator().config.getString("statistics.type").equalsIgnoreCase("database")) {
             try (Connection connection = Main.getDatabaseManager().getConnection()) {
@@ -293,31 +263,6 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                     Main.getInstance().getLogger().severe(ex.getMessage());
                 }
 
-                // TODO: Remove this after the event ended, this is a temporal solution
-                // Event stats
-                try (PreparedStatement preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getEventScoresSql(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-
-                    ResultSet resultSet = preparedStatement.executeQuery();
-                    if (resultSet.first()) {
-                        do {
-                            UUID uuid = UUID.fromString(resultSet.getString("uuid"));
-                            PlayerStatistic statistic = new PlayerStatistic(uuid);
-                            statistic.addKills(resultSet.getInt("kills"));
-                            statistic.addDeaths(resultSet.getInt("deaths"));
-                            statistic.addWins(resultSet.getInt("wins"));
-                            statistic.addLoses(resultSet.getInt("loses"));
-                            statistic.addDestroyedBeds(resultSet.getInt("destroyedBeds"));
-                            statistic.addScore(resultSet.getInt("score"));
-                            statistic.setName(resultSet.getString("name"));
-                            eventScores.put(uuid, statistic);
-                        } while (resultSet.next());
-                    }
-                } catch (Exception ex) {
-                    Main.getInstance().getLogger().severe("Couldn't load event statistics table.");
-                    Main.getInstance().getLogger().severe(ex.getMessage());
-                }
-
                 connection.commit();
             } catch (Exception ex) {
                 Main.getInstance().getLogger().severe("Couldn't load statistics from the database.");
@@ -366,22 +311,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 statistic.setName(dailyFileDatabase.getString("data." + key + ".name"));
                 dailyScores.put(UUID.fromString(key), statistic);
             }
-
-            // TODO: Remove this after the event ended, this is a temporal solution
-            // Load event stats
-            for (String key : eventFileDatabase.getConfigurationSection("data").getKeys(false)) {
-                PlayerStatistic statistic = new PlayerStatistic(UUID.fromString(key));
-                statistic.addKills(eventFileDatabase.getInt("data." + key + ".kills"));
-                statistic.addDeaths(eventFileDatabase.getInt("data." + key + ".deaths"));
-                statistic.addWins(eventFileDatabase.getInt("data." + key + ".wins"));
-                statistic.addLoses(eventFileDatabase.getInt("data." + key + ".loses"));
-                statistic.addDestroyedBeds(eventFileDatabase.getInt("data." + key + ".destroyedBeds"));
-                statistic.addScore(eventFileDatabase.getInt("data." + key + ".score"));
-                statistic.setName(eventFileDatabase.getString("data." + key + ".name"));
-                eventScores.put(UUID.fromString(key), statistic);
-            }
         }
-
     }
 
     public List<LeaderboardEntry> getLeaderboard(int count) {
@@ -480,7 +410,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 .orElse(null);
     }
 
-    private void loadYml(File ymlFile, File seasonalYmlFile, File dailyYmlFile, File eventYmlFile) {
+    private void loadYml(File ymlFile, File seasonalYmlFile, File dailyYmlFile) {
         try {
             Main.getInstance().getLogger().info("Loading statistics from YAML-File ...");
 
@@ -489,7 +419,6 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
             this.databaseFile = ymlFile;
             this.seasonalDatabaseFile = seasonalYmlFile;
             this.dailyDatabaseFile = dailyYmlFile;
-            this.eventDatabaseFile = eventYmlFile;
 
             // All-time stats
             if (!ymlFile.exists()) {
@@ -529,27 +458,12 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 config = YamlConfiguration.loadConfiguration(dailyYmlFile);
             }
             this.dailyFileDatabase = config;
-
-            // TODO: Remove this after the event ended, this is a temporal solution
-            // Event stats
-            if (!eventYmlFile.exists()) {
-                eventYmlFile.getParentFile().mkdirs();
-                eventYmlFile.createNewFile();
-
-                config = new YamlConfiguration();
-                config.createSection("data");
-                config.save(eventYmlFile);
-            } else {
-                config = YamlConfiguration.loadConfiguration(eventYmlFile);
-            }
-            this.eventFileDatabase = config;
-
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    private void storeDatabaseStatistic(PlayerStatistic allTimeStatistics, PlayerStatistic seasonalStatistics, PlayerStatistic dailyStatistics, PlayerStatistic eventStatistics) {
+    private void storeDatabaseStatistic(PlayerStatistic allTimeStatistics, PlayerStatistic seasonalStatistics, PlayerStatistic dailyStatistics) {
         try (Connection connection = Main.getDatabaseManager().getConnection()) {
             connection.setAutoCommit(false);
 
@@ -620,30 +534,6 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                 Main.getInstance().getLogger().severe(ex.getMessage());
             }
 
-            // TODO: Remove this after the event ended, this is a temporal solution
-            // Event stats
-            try (PreparedStatement preparedStatement = connection
-                    .prepareStatement(Main.getDatabaseManager().getEventWriteObjectSql()))
-            {
-                if (eventStatistics != null) {
-                    preparedStatement.setString(1, eventStatistics.getId().toString());
-                    preparedStatement.setString(2, eventStatistics.getName());
-                    preparedStatement.setInt(3, eventStatistics.getDeaths());
-                    preparedStatement.setInt(4, eventStatistics.getDestroyedBeds());
-                    preparedStatement.setInt(5, eventStatistics.getKills());
-                    preparedStatement.setInt(6, eventStatistics.getLoses());
-                    preparedStatement.setInt(7, eventStatistics.getScore());
-                    preparedStatement.setInt(8, eventStatistics.getWins());
-                    preparedStatement.executeUpdate();
-                }
-                else
-                    Main.getInstance().getLogger().warning("Tried to store null event statistics!");
-            }
-            catch (Exception ex) {
-                Main.getInstance().getLogger().warning("Couldn't store event statistic data");
-                Main.getInstance().getLogger().severe(ex.getMessage());
-            }
-
             connection.commit();
         } catch (SQLException e) {
             Main.getInstance().getLogger().warning("Couldn't store statistic data for player.");
@@ -652,7 +542,7 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
 
     }
 
-    public void storeStatistic(PlayerStatistic statistic, PlayerStatistic seasonalStatistic, PlayerStatistic dailyStatistic, PlayerStatistic eventStatistic) {
+    public void storeStatistic(PlayerStatistic statistic, PlayerStatistic seasonalStatistic, PlayerStatistic dailyStatistic) {
         BedwarsSavePlayerStatisticEvent savePlayerStatisticEvent = new BedwarsSavePlayerStatisticEvent(statistic);
         Main.getInstance().getServer().getPluginManager().callEvent(savePlayerStatisticEvent);
 
@@ -661,13 +551,13 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         }
 
         if (Main.getConfigurator().config.getString("statistics.type").equalsIgnoreCase("database")) {
-            this.storeDatabaseStatistic(statistic, seasonalStatistic, dailyStatistic, eventStatistic);
+            this.storeDatabaseStatistic(statistic, seasonalStatistic, dailyStatistic);
         } else {
-            this.storeYamlStatistic(statistic, seasonalStatistic, dailyStatistic, eventStatistic);
+            this.storeYamlStatistic(statistic, seasonalStatistic, dailyStatistic);
         }
     }
 
-    private synchronized void storeYamlStatistic(PlayerStatistic allTimeStatistics, PlayerStatistic seasonalStatistics, PlayerStatistic dailyStatistics, PlayerStatistic eventStatistics) {
+    private synchronized void storeYamlStatistic(PlayerStatistic allTimeStatistics, PlayerStatistic seasonalStatistics, PlayerStatistic dailyStatistics) {
         // Store all-time stats
         if (allTimeStatistics != null) {
             this.fileDatabase.set("data." + allTimeStatistics.getId().toString(), null);
@@ -709,21 +599,6 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
         }
         else
             Main.getInstance().getLogger().warning("Tried to store null daily statistics!");
-
-        // TODO: Remove this after the event ended, this is a temporal solution
-        // Event stats
-        if (eventStatistics != null) {
-            this.eventFileDatabase.set("data." + eventStatistics.getId().toString(), null);
-            this.eventFileDatabase.createSection("data." + eventStatistics.getId().toString(), eventStatistics.serialize());
-            try {
-                this.eventFileDatabase.save(this.eventDatabaseFile);
-            } catch (Exception ex) {
-                Main.getInstance().getLogger().warning("Couldn't store event statistic data for player with uuid: " + eventStatistics.getId().toString());
-                Main.getInstance().getLogger().severe(ex.getMessage());
-            }
-        }
-        else
-            Main.getInstance().getLogger().warning("Tried to store null event statistics!");
     }
 
     public void unloadStatistic(OfflinePlayer player) {
@@ -778,20 +653,6 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
 
     public void updateDailyScore(PlayerStatistic playerStatistic) {
         dailyScores.put(playerStatistic.getId(), playerStatistic);
-    }
-
-    // TODO: Remove this after the event ended, this is a temporal solution
-    public void addEventStatistic(UUID playerId) {
-        if (eventScores.containsKey(playerId)) {
-            return;
-        }
-
-        eventScores.put(playerId, new PlayerStatistic(playerId));
-    }
-
-    // TODO: Remove this after the event ended, this is a temporal solution
-    public void updateEventScore(PlayerStatistic playerStatistic) {
-        eventScores.put(playerStatistic.getId(), playerStatistic);
     }
 
     public void resetSeasonalScores() {
