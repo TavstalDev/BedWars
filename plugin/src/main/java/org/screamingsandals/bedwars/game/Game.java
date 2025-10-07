@@ -241,6 +241,7 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
     private boolean preparing = false;
     private TeamSelectorInventory teamSelectorInventory;
     private List<Chunk> chunksWithTickets = new ArrayList<>();
+    private boolean firstTickHasPassed = false;
 
     private Game() {
 
@@ -2540,6 +2541,13 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
             }
 
             double cycle = spawner.currentCycle;
+            // Fix: resources are instantly spawned right after game start
+            if (!firstTickHasPassed) {
+                spawner.setNextSpawnTime(cycle);
+                continue;
+            }
+
+
             /*
              * Calculate resource spawn from elapsedTime, not from remainingTime/countdown
              */
@@ -2625,12 +2633,14 @@ public class Game implements org.screamingsandals.bedwars.api.game.Game {
                 spawner.setNextSpawnTime(cycle);
             }
         }
+        firstTickHasPassed = true;
     }
 
     public void rebuild() {
         teamsInGame.clear();
         activeSpecialItems.clear();
         activeDelays.clear();
+        firstTickHasPassed = false;
 
         BedwarsPreRebuildingEvent preRebuildingEvent = new BedwarsPreRebuildingEvent(this);
         Main.getInstance().getServer().getPluginManager().callEvent(preRebuildingEvent);
