@@ -29,6 +29,7 @@ import java.util.List;
 public abstract class BaseCommand {
 
     public static final List<String> ADMIN_PERMISSION = Arrays.asList("misat11.bw.admin", "bw.admin");
+    public static final List<String> CMD_BYPASS_PERMISSION =  Arrays.asList("misat11.bw.cmd.bypass", "bw.admin", "bw.cmd.bypass");
     public static final List<String> OTHER_STATS_PERMISSION =  Arrays.asList("misat11.bw.otherstats", "bw.otherstats");
 
     public static final List<String> JOIN_PERMISSION =  Arrays.asList("misat11.bw.cmd.join", "bw.cmd.join");

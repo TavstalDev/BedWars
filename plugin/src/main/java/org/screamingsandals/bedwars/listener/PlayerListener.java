@@ -65,6 +65,7 @@ import org.screamingsandals.simpleinventories.utils.StackParser;
 
 import java.util.*;
 
+import static org.screamingsandals.bedwars.commands.BaseCommand.CMD_BYPASS_PERMISSION;
 import static org.screamingsandals.bedwars.lib.lang.I18n.*;
 import static org.screamingsandals.bedwars.commands.BaseCommand.ADMIN_PERMISSION;
 
@@ -591,7 +592,7 @@ public class PlayerListener implements Listener {
                 gamePlayer.changeGame(null);
             } else if (!Main.isCommandAllowedInGame(message.split(" ")[0])) {
                 //Allow players with permissions to use all commands
-                if (BaseCommand.hasPermission(player, ADMIN_PERMISSION, false)) {
+                if (BaseCommand.hasPermission(player, CMD_BYPASS_PERMISSION, false)) {
                     return;
                 }
 
