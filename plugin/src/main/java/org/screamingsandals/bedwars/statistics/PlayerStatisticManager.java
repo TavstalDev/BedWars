@@ -160,16 +160,6 @@ public class PlayerStatisticManager implements PlayerStatisticsManager {
                     Main.getInstance().getLogger().severe(ex.getMessage());
                 }
 
-                // TODO: Remove this after the event ended, this is a temporal solution
-                // Create event stats
-                try (PreparedStatement preparedStatement = connection
-                        .prepareStatement(Main.getDatabaseManager().getEventCreateTableSql())) {
-                    preparedStatement.executeUpdate();
-                } catch (Exception ex) {
-                    Main.getInstance().getLogger().severe("Couldn't create event statistics table.");
-                    Main.getInstance().getLogger().severe(ex.getMessage());
-                }
-
                 connection.commit();
             } catch (Exception ex) {
                 Main.getInstance().getLogger().severe("Couldn't create statistics tables.");
